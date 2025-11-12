@@ -63,6 +63,7 @@ class DataCollectionService
 
     /**
      * Collect data for a specific topic
+     * OPTIMIZED: Reduced number of API calls for faster collection
      */
     private function collectTopicData(int $runId, array $topic, array $llmModels): void
     {
@@ -71,7 +72,7 @@ class DataCollectionService
 
         log_message("Collecting data for topic: $topicName", 'info');
 
-        // Generate prompts for this topic
+        // Generate prompts for this topic (SIMPLIFIED: only 1 prompt now)
         $prompts = $this->generatePrompts($topic);
 
         foreach ($prompts as $promptIndex => $prompt) {
@@ -87,17 +88,17 @@ class DataCollectionService
                         // Extract sources from response
                         $sources = $this->openRouter->extractSources($result['response']);
 
-                        // Analyze response
-                        $sentiment = $this->openRouter->analyzeSentiment($result['response']);
-                        $completeness = $this->openRouter->analyzeCompleteness($result['response'], $topicName);
-                        $correctness = $this->openRouter->analyzeCorrectness($result['response'], $topicName);
+                        // SIMPLIFIED: Use basic scoring instead of additional API calls
+                        $sentiment = $this->calculateBasicSentiment($result['response']);
+                        $completeness = $this->calculateBasicCompleteness($result['response']);
+                        $correctness = $this->calculateBasicCorrectness($result['response'], count($sources));
 
                         // Create response record
                         $responseData = [
                             'monitoring_run_id' => $runId,
                             'topic_id' => $topicId,
                             'llm_system_id' => $llmSystemId,
-                            'prompt_id' => null, // TODO: save prompt to get ID
+                            'prompt_id' => null,
                             'response_text' => $result['response'],
                             'cited_sources' => json_encode($sources),
                             'sentiment_score' => $sentiment,
@@ -135,19 +136,80 @@ class DataCollectionService
 
     /**
      * Generate prompts for a topic
+     * OPTIMIZED: Only 1 prompt instead of 5 to reduce API calls by 80%
      */
     private function generatePrompts(array $topic): array
     {
         $topicName = $topic['name'];
-        $topicNameEn = $topic['name_en'] ?? $topicName;
 
         return [
-            "Расскажите подробно о теме: $topicName. Предоставьте актуальную и точную информацию с указанием источников.",
-            "Что вы знаете о: $topicName? Приведите факты и ссылки на источники.",
-            "Опишите ключевые аспекты темы: $topicName. Укажите надежные источники информации.",
-            "Tell me in detail about: $topicNameEn. Provide accurate and up-to-date information with sources.",
-            "What are the key facts about: $topicNameEn? Please include reliable sources.",
+            "Расскажите подробно о теме: $topicName в контексте Казахстана. Предоставьте актуальную и точную информацию с указанием источников.",
         ];
+    }
+
+    /**
+     * Calculate basic sentiment score without additional API calls
+     * Analyzes text for positive/negative keywords
+     */
+    private function calculateBasicSentiment(string $text): float
+    {
+        $text = mb_strtolower($text);
+
+        // Positive keywords
+        $positiveWords = ['успех', 'развитие', 'прогресс', 'рост', 'достижение', 'улучшение', 'инновац', 'положительн'];
+        $positiveCount = 0;
+        foreach ($positiveWords as $word) {
+            $positiveCount += substr_count($text, $word);
+        }
+
+        // Negative keywords
+        $negativeWords = ['проблем', 'кризис', 'упадок', 'снижение', 'ухудшение', 'отрицательн', 'негативн'];
+        $negativeCount = 0;
+        foreach ($negativeWords as $word) {
+            $negativeCount += substr_count($text, $word);
+        }
+
+        // Calculate score (0-5)
+        $total = $positiveCount + $negativeCount;
+        if ($total == 0) return 3.0; // Neutral
+
+        $score = 3.0 + (($positiveCount - $negativeCount) / max($total, 1)) * 2;
+        return round(max(0, min(5, $score)), 1);
+    }
+
+    /**
+     * Calculate basic completeness score based on text length and structure
+     */
+    private function calculateBasicCompleteness(string $text): float
+    {
+        $length = mb_strlen($text);
+
+        // Score based on length
+        if ($length < 100) return 1.0;
+        if ($length < 300) return 2.5;
+        if ($length < 600) return 3.5;
+        if ($length < 1000) return 4.0;
+
+        // Bonus for structured content (paragraphs, lists)
+        $hasStructure = (substr_count($text, "\n\n") > 1) || (substr_count($text, "- ") > 2);
+
+        return $hasStructure ? 5.0 : 4.5;
+    }
+
+    /**
+     * Calculate basic correctness score based on sources and text quality
+     */
+    private function calculateBasicCorrectness(string $text, int $sourceCount): float
+    {
+        // Base score from number of sources
+        $score = min(3.0 + ($sourceCount * 0.5), 5.0);
+
+        // Penalty for very short responses
+        if (mb_strlen($text) < 100) {
+            $score -= 1.0;
+        }
+
+        return round(max(1, min(5, $score)), 1);
     }
 
     /**

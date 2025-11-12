@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Topics - SGEO Analytics</title>
+    <title>Топики - SGEO Analytics</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,19 +11,19 @@
 
     <div class="container">
         <div class="page-header">
-            <h1>Priority Topics</h1>
-            <p class="subtitle">20 strategic topics about Kazakhstan monitored across LLM systems</p>
+            <h1>📋 Приоритетные топики</h1>
+            <p class="subtitle">20 стратегических тем о Казахстане, отслеживаемых в LLM системах</p>
         </div>
 
         <?php if (!empty($topics)): ?>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Topic Name (RU)</th>
-                    <th>Topic Name (EN)</th>
-                    <th>Strategic Importance</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Название топика (RU)</th>
+                    <th>Название топика (EN)</th>
+                    <th>Стратегическая важность</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -39,14 +39,14 @@
                     </td>
                     <td><span class="status-badge status-<?= $topic['status'] ?>"><?= ucfirst($topic['status']) ?></span></td>
                     <td>
-                        <a href="/topic?id=<?= $topic['id'] ?>" class="btn btn-sm btn-primary">View Details</a>
+                        <a href="/topic?id=<?= $topic['id'] ?>" class="btn btn-sm btn-primary">Подробнее</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
         <?php else: ?>
-        <p class="no-data">No topics available.</p>
+        <p class="no-data">📭 Нет доступных топиков.</p>
         <?php endif; ?>
     </div>
 </body>

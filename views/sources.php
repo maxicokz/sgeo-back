@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sources - SGEO Analytics</title>
+    <title>Источники - SGEO Analytics</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,11 +11,11 @@
 
     <div class="container">
         <div class="page-header">
-            <h1>Source Analysis</h1>
+            <h1>🔗 Анализ источников</h1>
             <div class="page-actions">
                 <label class="filter-checkbox">
                     <input type="checkbox" id="officialFilter" <?= $official_only ? 'checked' : '' ?> onchange="toggleOfficialFilter()">
-                    Show Official Sources Only
+                    Показать только официальные источники
                 </label>
             </div>
         </div>
@@ -24,13 +24,13 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Domain</th>
-                    <th>Type</th>
-                    <th>Official</th>
-                    <th>E-E-A-T Score</th>
-                    <th>Health Index</th>
-                    <th>Citations</th>
-                    <th>Optimization Status</th>
+                    <th>Домен</th>
+                    <th>Тип</th>
+                    <th>Официальный</th>
+                    <th>Оценка E-E-A-T</th>
+                    <th>Индекс здоровья</th>
+                    <th>Цитирования</th>
+                    <th>Статус оптимизации</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,7 +43,7 @@
                         <?php endif; ?>
                     </td>
                     <td><?= sanitize($source['source_type']) ?></td>
-                    <td><?= $source['is_official'] ? '✓ Official' : '—' ?></td>
+                    <td><?= $source['is_official'] ? '✓ Да' : '—' ?></td>
                     <td>
                         <div class="score-display">
                             <strong><?= round($source['overall_eeat_score'] ?? 0, 1) ?></strong> / 100
@@ -63,7 +63,7 @@
             </tbody>
         </table>
         <?php else: ?>
-        <p class="no-data">No sources available.</p>
+        <p class="no-data">📭 Нет доступных источников.</p>
         <?php endif; ?>
     </div>
 

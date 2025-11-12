@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports - SGEO Analytics</title>
+    <title>Отчеты - SGEO Analytics</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,19 +11,19 @@
 
     <div class="container">
         <div class="page-header">
-            <h1>Generated Reports</h1>
-            <button class="btn btn-primary" onclick="generateNewReport()">Generate New Report</button>
+            <h1>📊 Сгенерированные отчеты</h1>
+            <button class="btn btn-primary" onclick="generateNewReport()">Создать новый отчет</button>
         </div>
 
         <?php if (!empty($reports)): ?>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Report Type</th>
-                    <th>Title</th>
-                    <th>Period</th>
-                    <th>Generated At</th>
-                    <th>Actions</th>
+                    <th>Тип отчета</th>
+                    <th>Название</th>
+                    <th>Период</th>
+                    <th>Создан</th>
+                    <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -35,9 +35,9 @@
                     <td><?= format_date($report['generated_at']) ?></td>
                     <td>
                         <?php if ($report['file_path'] && file_exists($report['file_path'])): ?>
-                        <a href="<?= $report['file_path'] ?>" class="btn btn-sm btn-primary" download>Download PDF</a>
+                        <a href="<?= $report['file_path'] ?>" class="btn btn-sm btn-primary" download>Скачать PDF</a>
                         <?php else: ?>
-                        <span class="text-muted">File not found</span>
+                        <span class="text-muted">Файл не найден</span>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -45,14 +45,14 @@
             </tbody>
         </table>
         <?php else: ?>
-        <p class="no-data">No reports generated yet.</p>
+        <p class="no-data">📭 Отчеты еще не созданы.</p>
         <?php endif; ?>
     </div>
 
     <script>
         function generateNewReport() {
             // TODO: Show modal to select run and report type
-            alert('Report generation feature - coming soon');
+            alert('Функция создания отчетов - скоро будет доступна');
         }
     </script>
 </body>
