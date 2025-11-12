@@ -1,5 +1,12 @@
 <?php
 
+// Check if vendor directory exists
+if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    // Redirect to dependency installer
+    header('Location: setup-dependencies.php');
+    exit;
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Database\Connection;
