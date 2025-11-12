@@ -52,16 +52,17 @@ class Connection
                     // Priority 2: Auto-detect socket for localhost connections
                     elseif ($host === 'localhost') {
                         // Try common socket locations for shared hosting (MySQL & MariaDB)
+                        // Ordered by likelihood on popular hosting providers (Plesk, cPanel, etc)
                         $commonSockets = [
-                            ini_get('mysqli.default_socket'),  // PHP default (highest priority)
-                            '/var/run/mysqld/mysqld.sock',    // Debian/Ubuntu MySQL
-                            '/var/lib/mysql/mysql.sock',      // Red Hat/CentOS MySQL
-                            '/tmp/mysql.sock',                // Generic MySQL
-                            '/var/run/mysqld/mariadb.sock',   // Debian/Ubuntu MariaDB
-                            '/var/lib/mysql/mariadb.sock',    // Red Hat/CentOS MariaDB
-                            '/tmp/mariadb.sock',              // Generic MariaDB
-                            '/run/mysqld/mysqld.sock',        // Alternative Debian/Ubuntu
-                            '/opt/lampp/var/mysql/mysql.sock', // XAMPP
+                            ini_get('mysqli.default_socket'),     // PHP default (highest priority)
+                            '/var/lib/mysql/mysql.sock',         // Plesk, Red Hat/CentOS MySQL (very common)
+                            '/tmp/mysql.sock',                   // Plesk alternative, Generic MySQL
+                            '/var/run/mysqld/mysqld.sock',       // Debian/Ubuntu MySQL
+                            '/var/lib/mysql/mariadb.sock',       // Plesk MariaDB, Red Hat/CentOS MariaDB
+                            '/tmp/mariadb.sock',                 // Generic MariaDB
+                            '/var/run/mysqld/mariadb.sock',      // Debian/Ubuntu MariaDB
+                            '/run/mysqld/mysqld.sock',           // Alternative Debian/Ubuntu
+                            '/opt/lampp/var/mysql/mysql.sock',   // XAMPP
                             '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
                         ];
 
