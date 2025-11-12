@@ -1,0 +1,30 @@
+# Environment files
+.env
+.env.local
+
+# Dependencies
+/vendor/
+composer.lock
+
+# Logs
+/logs/*.log
+
+# Reports
+/reports/*.pdf
+
+# Temporary files
+/temp/*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+/cache/*

@@ -1,0 +1,27 @@
+{
+    "name": "maxicokz/sgeo-analytics",
+    "description": "SGEO Analytics Dashboard - Monitoring and analytics for Kazakhstan representation in AI systems",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "vlucas/phpdotenv": "^5.5",
+        "guzzlehttp/guzzle": "^7.0",
+        "dompdf/dompdf": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        },
+        "files": [
+            "src/Utils/helpers.php"
+        ]
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php -r \"copy('.env.example', '.env');\""
+        ]
+    }
+}
