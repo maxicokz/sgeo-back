@@ -41,17 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Test database connection
             try {
+                $host = $config['DB_HOST'];
+
+                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
+                // This prevents socket file issues on different systems
+                if ($dbDriver === 'mysql' && $host === 'localhost') {
+                    $host = '127.0.0.1';
+                }
+
                 if ($dbDriver === 'mysql') {
                     $dsn = sprintf(
                         'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                        $config['DB_HOST'],
+                        $host,
                         $config['DB_PORT'],
                         $config['DB_NAME']
                     );
                 } else {
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
-                        $config['DB_HOST'],
+                        $host,
                         $config['DB_PORT'],
                         $config['DB_NAME']
                     );
@@ -95,18 +103,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             try {
                 $dbDriver = $config['DB_DRIVER'] ?? 'mysql';
+                $host = $config['DB_HOST'];
+
+                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
+                // This prevents socket file issues on different systems
+                if ($dbDriver === 'mysql' && $host === 'localhost') {
+                    $host = '127.0.0.1';
+                }
 
                 if ($dbDriver === 'mysql') {
                     $dsn = sprintf(
                         'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                        $config['DB_HOST'],
+                        $host,
                         $config['DB_PORT'],
                         $config['DB_NAME']
                     );
                 } else {
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
-                        $config['DB_HOST'],
+                        $host,
                         $config['DB_PORT'],
                         $config['DB_NAME']
                     );
@@ -236,7 +251,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         input[type="text"],
         input[type="password"],
-        input[type="url"] {
+        input[type="url"],
+        select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -327,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <br>
                 <p><strong>Before you begin, make sure you have:</strong></p>
                 <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li>PostgreSQL database created</li>
+                    <li>MySQL/MariaDB or PostgreSQL database created</li>
                     <li>Database credentials (host, username, password)</li>
                     <li>OpenRouter API key (get it from openrouter.ai)</li>
                     <li>All files uploaded via FTP</li>
@@ -356,7 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Database Host</label>
                     <input type="text" name="db_host" value="localhost" required>
-                    <p class="help-text">Usually "localhost" or provided by your hosting</p>
+                    <p class="help-text">Use "localhost" or "127.0.0.1" (recommended for MySQL/MariaDB)</p>
                 </div>
 
                 <div class="form-group">
