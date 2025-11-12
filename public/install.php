@@ -4,6 +4,9 @@
  * For shared hosting without shell access
  */
 
+// Fix session path for Plesk shared hosting (open_basedir restriction)
+ini_set('session.save_path', '/tmp');
+
 // Disable error display in production
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

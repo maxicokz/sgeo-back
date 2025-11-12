@@ -1,5 +1,9 @@
 <?php
 
+// Fix session path for Plesk shared hosting (open_basedir restriction)
+// Use /tmp which is allowed in open_basedir
+ini_set('session.save_path', '/tmp');
+
 // Check if vendor directory exists
 if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
     // Redirect to dependency installer
