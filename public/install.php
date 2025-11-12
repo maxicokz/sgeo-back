@@ -99,13 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $pdo = new PDO($dsn, $config['DB_USER'], $config['DB_PASSWORD']);
 
-                // Save .env file
+                // Save .env file in project root (not in public/)
                 $envContent = '';
                 foreach ($config as $key => $value) {
                     $envContent .= "$key=$value\n";
                 }
 
-                if (file_put_contents(__DIR__ . '/.env', $envContent)) {
+                $envPath = __DIR__ . '/../.env';
+                if (file_put_contents($envPath, $envContent)) {
                     $success = 'Configuration saved successfully!';
                     $step = 3;
                 } else {
