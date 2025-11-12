@@ -51,33 +51,14 @@ class Connection
                     }
                     // Priority 2: Auto-detect socket for localhost connections
                     elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting (MySQL & MariaDB)
-                        // Ordered by likelihood on popular hosting providers (Plesk, cPanel, etc)
-                        $commonSockets = [
-                            ini_get('mysqli.default_socket'),     // PHP default (highest priority)
-                            '/var/lib/mysql/mysql.sock',         // Plesk, Red Hat/CentOS MySQL (very common)
-                            '/tmp/mysql.sock',                   // Plesk alternative, Generic MySQL
-                            '/var/run/mysqld/mysqld.sock',       // Debian/Ubuntu MySQL
-                            '/var/lib/mysql/mariadb.sock',       // Plesk MariaDB, Red Hat/CentOS MariaDB
-                            '/tmp/mariadb.sock',                 // Generic MariaDB
-                            '/var/run/mysqld/mariadb.sock',      // Debian/Ubuntu MariaDB
-                            '/run/mysqld/mysqld.sock',           // Alternative Debian/Ubuntu
-                            '/opt/lampp/var/mysql/mysql.sock',   // XAMPP
-                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
-                        ];
+                        // For Plesk: use mysqli.default_socket directly (can't check file_exists due to open_basedir)
+                        $socketPath = ini_get('mysqli.default_socket');
 
-                        $foundSocket = null;
-                        foreach ($commonSockets as $socketPath) {
-                            if (!empty($socketPath) && file_exists($socketPath)) {
-                                $foundSocket = $socketPath;
-                                break;
-                            }
-                        }
-
-                        if ($foundSocket) {
+                        if (!empty($socketPath)) {
+                            // Try to use the socket from PHP config
                             $dsn = sprintf(
                                 'mysql:unix_socket=%s;dbname=%s;charset=%s',
-                                $foundSocket,
+                                $socketPath,
                                 self::$config['database'],
                                 self::$config['charset'] ?? 'utf8mb4'
                             );

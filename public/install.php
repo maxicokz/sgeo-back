@@ -60,41 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $config['DB_NAME']
                         );
                     } elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting (MySQL & MariaDB)
-                        // Ordered by likelihood on popular hosting providers
-                        $commonSockets = [
-                            ini_get('mysqli.default_socket'),     // PHP default (highest priority)
-                            '/var/lib/mysql/mysql.sock',         // Plesk, Red Hat/CentOS MySQL (very common)
-                            '/tmp/mysql.sock',                   // Plesk alternative, Generic MySQL
-                            '/var/run/mysqld/mysqld.sock',       // Debian/Ubuntu MySQL
-                            '/var/lib/mysql/mariadb.sock',       // Plesk MariaDB, Red Hat/CentOS MariaDB
-                            '/tmp/mariadb.sock',                 // Generic MariaDB
-                            '/var/run/mysqld/mariadb.sock',      // Debian/Ubuntu MariaDB
-                            '/run/mysqld/mysqld.sock',           // Alternative Debian/Ubuntu
-                            '/opt/lampp/var/mysql/mysql.sock',   // XAMPP
-                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
-                        ];
+                        // For Plesk: use mysqli.default_socket directly (can't check file_exists due to open_basedir)
+                        $socketPath = ini_get('mysqli.default_socket');
 
-                        $foundSocket = null;
-                        $triedSockets = [];
-
-                        foreach ($commonSockets as $socketPath) {
-                            if (!empty($socketPath)) {
-                                $triedSockets[] = $socketPath;
-                                if (file_exists($socketPath)) {
-                                    $foundSocket = $socketPath;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if ($foundSocket) {
+                        if (!empty($socketPath)) {
+                            // Try to use the socket from PHP config
                             $dsn = sprintf(
                                 'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
-                                $foundSocket,
+                                $socketPath,
                                 $config['DB_NAME']
                             );
-                            $config['DB_SOCKET'] = $foundSocket;
+                            $config['DB_SOCKET'] = $socketPath;
                         } else {
                             // Fallback to TCP/IP with 127.0.0.1
                             $dsn = sprintf(
@@ -139,14 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Database connection failed: ' . $e->getMessage();
 
                 // Add helpful diagnostic info for socket issues
-                if (strpos($e->getMessage(), 'No such file or directory') !== false && isset($triedSockets)) {
-                    $error .= "\n\nAuto-detection tried these socket paths:\n";
-                    foreach ($triedSockets as $path) {
-                        $exists = file_exists($path) ? '✓ Found' : '✗ Not found';
-                        $error .= "- $path ($exists)\n";
-                    }
+                if (strpos($e->getMessage(), 'No such file or directory') !== false) {
+                    $socketUsed = ini_get('mysqli.default_socket');
+                    $error .= "\n\nAttempted to use socket: " . ($socketUsed ?: 'none (fallback to TCP/IP)');
                     $error .= "\nPlease enter the correct socket path manually in the 'MySQL Socket Path' field below.";
-                    $error .= "\nOr contact your hosting provider to get the correct socket path.";
+                    $error .= "\nOr check your database credentials and ensure MariaDB is running.";
                 }
             }
             break;
@@ -183,33 +156,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $config['DB_NAME']
                         );
                     } elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting (MySQL & MariaDB)
-                        // Ordered by likelihood on popular hosting providers
-                        $commonSockets = [
-                            ini_get('mysqli.default_socket'),     // PHP default (highest priority)
-                            '/var/lib/mysql/mysql.sock',         // Plesk, Red Hat/CentOS MySQL (very common)
-                            '/tmp/mysql.sock',                   // Plesk alternative, Generic MySQL
-                            '/var/run/mysqld/mysqld.sock',       // Debian/Ubuntu MySQL
-                            '/var/lib/mysql/mariadb.sock',       // Plesk MariaDB, Red Hat/CentOS MariaDB
-                            '/tmp/mariadb.sock',                 // Generic MariaDB
-                            '/var/run/mysqld/mariadb.sock',      // Debian/Ubuntu MariaDB
-                            '/run/mysqld/mysqld.sock',           // Alternative Debian/Ubuntu
-                            '/opt/lampp/var/mysql/mysql.sock',   // XAMPP
-                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
-                        ];
+                        // For Plesk: use mysqli.default_socket directly (can't check file_exists due to open_basedir)
+                        $socketPath = ini_get('mysqli.default_socket');
 
-                        $foundSocket = null;
-                        foreach ($commonSockets as $socketPath) {
-                            if (!empty($socketPath) && file_exists($socketPath)) {
-                                $foundSocket = $socketPath;
-                                break;
-                            }
-                        }
-
-                        if ($foundSocket) {
+                        if (!empty($socketPath)) {
+                            // Try to use the socket from PHP config
                             $dsn = sprintf(
                                 'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
-                                $foundSocket,
+                                $socketPath,
                                 $config['DB_NAME']
                             );
                         } else {
