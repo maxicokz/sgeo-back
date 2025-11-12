@@ -35,12 +35,25 @@ class Connection
     {
         if (self::$instance === null) {
             try {
-                $dsn = sprintf(
-                    'pgsql:host=%s;port=%s;dbname=%s',
-                    self::$config['host'],
-                    self::$config['port'],
-                    self::$config['database']
-                );
+                $driver = self::$config['driver'] ?? 'mysql';
+
+                if ($driver === 'mysql') {
+                    $dsn = sprintf(
+                        'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+                        self::$config['host'],
+                        self::$config['port'],
+                        self::$config['database'],
+                        self::$config['charset'] ?? 'utf8mb4'
+                    );
+                } else {
+                    // PostgreSQL
+                    $dsn = sprintf(
+                        'pgsql:host=%s;port=%s;dbname=%s',
+                        self::$config['host'],
+                        self::$config['port'],
+                        self::$config['database']
+                    );
+                }
 
                 self::$instance = new PDO(
                     $dsn,
@@ -99,19 +112,37 @@ class Connection
         $values = array_values($data);
         $placeholders = array_fill(0, count($values), '?');
 
-        $sql = sprintf(
-            'INSERT INTO %s (%s) VALUES (%s) RETURNING id',
-            $table,
-            implode(', ', $columns),
-            implode(', ', $placeholders)
-        );
+        $driver = self::$config['driver'] ?? 'mysql';
 
-        $db = self::getInstance();
-        $stmt = $db->prepare($sql);
-        $stmt->execute($values);
-        $result = $stmt->fetch();
+        if ($driver === 'mysql') {
+            $sql = sprintf(
+                'INSERT INTO %s (%s) VALUES (%s)',
+                $table,
+                implode(', ', $columns),
+                implode(', ', $placeholders)
+            );
 
-        return (int)$result['id'];
+            $db = self::getInstance();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($values);
+
+            return (int)$db->lastInsertId();
+        } else {
+            // PostgreSQL - use RETURNING
+            $sql = sprintf(
+                'INSERT INTO %s (%s) VALUES (%s) RETURNING id',
+                $table,
+                implode(', ', $columns),
+                implode(', ', $placeholders)
+            );
+
+            $db = self::getInstance();
+            $stmt = $db->prepare($sql);
+            $stmt->execute($values);
+            $result = $stmt->fetch();
+
+            return (int)$result['id'];
+        }
     }
 
     /**

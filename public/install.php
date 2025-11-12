@@ -23,9 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($step) {
         case 2:
             // Save configuration
+            $dbDriver = $_POST['db_driver'] ?? 'mysql';
+            $dbPort = $dbDriver === 'mysql' ? '3306' : '5432';
+
             $config = [
+                'DB_DRIVER' => $dbDriver,
                 'DB_HOST' => $_POST['db_host'] ?? '',
-                'DB_PORT' => $_POST['db_port'] ?? '5432',
+                'DB_PORT' => $_POST['db_port'] ?? $dbPort,
                 'DB_NAME' => $_POST['db_name'] ?? '',
                 'DB_USER' => $_POST['db_user'] ?? '',
                 'DB_PASSWORD' => $_POST['db_password'] ?? '',
@@ -37,12 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Test database connection
             try {
-                $dsn = sprintf(
-                    'pgsql:host=%s;port=%s;dbname=%s',
-                    $config['DB_HOST'],
-                    $config['DB_PORT'],
-                    $config['DB_NAME']
-                );
+                if ($dbDriver === 'mysql') {
+                    $dsn = sprintf(
+                        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                        $config['DB_HOST'],
+                        $config['DB_PORT'],
+                        $config['DB_NAME']
+                    );
+                } else {
+                    $dsn = sprintf(
+                        'pgsql:host=%s;port=%s;dbname=%s',
+                        $config['DB_HOST'],
+                        $config['DB_PORT'],
+                        $config['DB_NAME']
+                    );
+                }
                 $pdo = new PDO($dsn, $config['DB_USER'], $config['DB_PASSWORD']);
 
                 // Save .env file
@@ -81,17 +94,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             try {
-                $dsn = sprintf(
-                    'pgsql:host=%s;port=%s;dbname=%s',
-                    $config['DB_HOST'],
-                    $config['DB_PORT'],
-                    $config['DB_NAME']
-                );
+                $dbDriver = $config['DB_DRIVER'] ?? 'mysql';
+
+                if ($dbDriver === 'mysql') {
+                    $dsn = sprintf(
+                        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                        $config['DB_HOST'],
+                        $config['DB_PORT'],
+                        $config['DB_NAME']
+                    );
+                } else {
+                    $dsn = sprintf(
+                        'pgsql:host=%s;port=%s;dbname=%s',
+                        $config['DB_HOST'],
+                        $config['DB_PORT'],
+                        $config['DB_NAME']
+                    );
+                }
+
                 $pdo = new PDO($dsn, $config['DB_USER'], $config['DB_PASSWORD']);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-                // Read and execute SQL file
-                $sql = file_get_contents(__DIR__ . '/../database/schema.sql');
+                // Read and execute SQL file - use correct schema based on driver
+                $schemaFile = $dbDriver === 'mysql'
+                    ? __DIR__ . '/../database/schema-mysql.sql'
+                    : __DIR__ . '/../database/schema.sql';
+
+                $sql = file_get_contents($schemaFile);
 
                 // Execute SQL (split by semicolon)
                 $statements = array_filter(array_map('trim', explode(';', $sql)));
@@ -316,6 +345,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form method="POST">
                 <div class="form-group">
+                    <label>Database Type</label>
+                    <select name="db_driver" id="db_driver" onchange="updatePort()" required>
+                        <option value="mysql" selected>MySQL / MariaDB</option>
+                        <option value="pgsql">PostgreSQL</option>
+                    </select>
+                    <p class="help-text">Select your database type</p>
+                </div>
+
+                <div class="form-group">
                     <label>Database Host</label>
                     <input type="text" name="db_host" value="localhost" required>
                     <p class="help-text">Usually "localhost" or provided by your hosting</p>
@@ -323,8 +361,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label>Database Port</label>
-                    <input type="text" name="db_port" value="5432" required>
-                    <p class="help-text">Default PostgreSQL port is 5432</p>
+                    <input type="text" name="db_port" id="db_port" value="3306" required>
+                    <p class="help-text">MySQL: 3306, PostgreSQL: 5432</p>
                 </div>
 
                 <div class="form-group">
@@ -399,5 +437,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        function updatePort() {
+            const driver = document.getElementById('db_driver').value;
+            const portField = document.getElementById('db_port');
+            portField.value = driver === 'mysql' ? '3306' : '5432';
+        }
+    </script>
 </body>
 </html>
