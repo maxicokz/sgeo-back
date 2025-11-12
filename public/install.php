@@ -57,20 +57,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $config['DB_NAME']
                         );
                     } elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting
+                        // Try common socket locations for shared hosting (MySQL & MariaDB)
                         $commonSockets = [
-                            '/var/run/mysqld/mysqld.sock',
-                            '/tmp/mysql.sock',
-                            '/var/lib/mysql/mysql.sock',
-                            '/Applications/MAMP/tmp/mysql/mysql.sock',
-                            ini_get('mysqli.default_socket')
+                            ini_get('mysqli.default_socket'),  // PHP default (highest priority)
+                            '/var/run/mysqld/mysqld.sock',    // Debian/Ubuntu MySQL
+                            '/var/lib/mysql/mysql.sock',      // Red Hat/CentOS MySQL
+                            '/tmp/mysql.sock',                // Generic MySQL
+                            '/var/run/mysqld/mariadb.sock',   // Debian/Ubuntu MariaDB
+                            '/var/lib/mysql/mariadb.sock',    // Red Hat/CentOS MariaDB
+                            '/tmp/mariadb.sock',              // Generic MariaDB
+                            '/run/mysqld/mysqld.sock',        // Alternative Debian/Ubuntu
+                            '/opt/lampp/var/mysql/mysql.sock', // XAMPP
+                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
                         ];
 
                         $foundSocket = null;
+                        $triedSockets = [];
+
                         foreach ($commonSockets as $socketPath) {
-                            if (!empty($socketPath) && file_exists($socketPath)) {
-                                $foundSocket = $socketPath;
-                                break;
+                            if (!empty($socketPath)) {
+                                $triedSockets[] = $socketPath;
+                                if (file_exists($socketPath)) {
+                                    $foundSocket = $socketPath;
+                                    break;
+                                }
                             }
                         }
 
@@ -123,6 +133,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } catch (PDOException $e) {
                 $error = 'Database connection failed: ' . $e->getMessage();
+
+                // Add helpful diagnostic info for socket issues
+                if (strpos($e->getMessage(), 'No such file or directory') !== false && isset($triedSockets)) {
+                    $error .= "\n\nAuto-detection tried these socket paths:\n";
+                    foreach ($triedSockets as $path) {
+                        $exists = file_exists($path) ? '✓ Found' : '✗ Not found';
+                        $error .= "- $path ($exists)\n";
+                    }
+                    $error .= "\nPlease enter the correct socket path manually in the 'MySQL Socket Path' field below.";
+                    $error .= "\nOr contact your hosting provider to get the correct socket path.";
+                }
             }
             break;
 
@@ -158,13 +179,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $config['DB_NAME']
                         );
                     } elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting
+                        // Try common socket locations for shared hosting (MySQL & MariaDB)
                         $commonSockets = [
-                            '/var/run/mysqld/mysqld.sock',
-                            '/tmp/mysql.sock',
-                            '/var/lib/mysql/mysql.sock',
-                            '/Applications/MAMP/tmp/mysql/mysql.sock',
-                            ini_get('mysqli.default_socket')
+                            ini_get('mysqli.default_socket'),  // PHP default (highest priority)
+                            '/var/run/mysqld/mysqld.sock',    // Debian/Ubuntu MySQL
+                            '/var/lib/mysql/mysql.sock',      // Red Hat/CentOS MySQL
+                            '/tmp/mysql.sock',                // Generic MySQL
+                            '/var/run/mysqld/mariadb.sock',   // Debian/Ubuntu MariaDB
+                            '/var/lib/mysql/mariadb.sock',    // Red Hat/CentOS MariaDB
+                            '/tmp/mariadb.sock',              // Generic MariaDB
+                            '/run/mysqld/mysqld.sock',        // Alternative Debian/Ubuntu
+                            '/opt/lampp/var/mysql/mysql.sock', // XAMPP
+                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
                         ];
 
                         $foundSocket = null;

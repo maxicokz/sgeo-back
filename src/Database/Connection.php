@@ -51,13 +51,18 @@ class Connection
                     }
                     // Priority 2: Auto-detect socket for localhost connections
                     elseif ($host === 'localhost') {
-                        // Try common socket locations for shared hosting
+                        // Try common socket locations for shared hosting (MySQL & MariaDB)
                         $commonSockets = [
-                            '/var/run/mysqld/mysqld.sock',
-                            '/tmp/mysql.sock',
-                            '/var/lib/mysql/mysql.sock',
-                            '/Applications/MAMP/tmp/mysql/mysql.sock',
-                            ini_get('mysqli.default_socket')
+                            ini_get('mysqli.default_socket'),  // PHP default (highest priority)
+                            '/var/run/mysqld/mysqld.sock',    // Debian/Ubuntu MySQL
+                            '/var/lib/mysql/mysql.sock',      // Red Hat/CentOS MySQL
+                            '/tmp/mysql.sock',                // Generic MySQL
+                            '/var/run/mysqld/mariadb.sock',   // Debian/Ubuntu MariaDB
+                            '/var/lib/mysql/mariadb.sock',    // Red Hat/CentOS MariaDB
+                            '/tmp/mariadb.sock',              // Generic MariaDB
+                            '/run/mysqld/mysqld.sock',        // Alternative Debian/Ubuntu
+                            '/opt/lampp/var/mysql/mysql.sock', // XAMPP
+                            '/Applications/MAMP/tmp/mysql/mysql.sock', // MAMP
                         ];
 
                         $foundSocket = null;
@@ -116,7 +121,10 @@ class Connection
 
                 // Add helpful error messages for common issues
                 if (strpos($e->getMessage(), 'No such file or directory') !== false) {
-                    $errorMsg .= "\nHint: Check DB_HOST and DB_PORT in .env file. Use 127.0.0.1 instead of localhost for MySQL.";
+                    $errorMsg .= "\nHint: Check DB_HOST and DB_PORT in .env file.";
+                    $errorMsg .= "\nFor MySQL/MariaDB on shared hosting, you may need to set DB_SOCKET in .env";
+                    $errorMsg .= "\nExample: DB_SOCKET=/var/run/mysqld/mysqld.sock";
+                    $errorMsg .= "\nContact your hosting provider to get the correct socket path.";
                 } elseif (strpos($e->getMessage(), 'Access denied') !== false) {
                     $errorMsg .= "\nHint: Check DB_USER and DB_PASSWORD in .env file.";
                 } elseif (strpos($e->getMessage(), 'Unknown database') !== false) {
