@@ -14,9 +14,22 @@ use App\Controllers\DashboardController;
 use App\Controllers\ApiController;
 use App\Controllers\AuthController;
 
+// Check if .env file exists before loading
+if (!file_exists(__DIR__ . '/../.env')) {
+    // No .env file, redirect to installer
+    header('Location: install.php');
+    exit;
+}
+
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->load();
+try {
+    $dotenv->load();
+} catch (\Exception $e) {
+    // If loading fails, redirect to installer
+    header('Location: install.php');
+    exit;
+}
 
 // Initialize database connection
 Connection::init(require __DIR__ . '/../config/database.php');
