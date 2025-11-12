@@ -62,6 +62,87 @@ class DataCollectionService
     }
 
     /**
+     * Run batch collection for Plesk shared hosting (avoid timeouts)
+     * Collects data for a limited number of topics per call
+     *
+     * @param int $batchSize Number of topics to process in one batch (default: 2)
+     * @param int|null $runId Existing run ID or null to create new
+     * @return array ['run_id' => int, 'completed' => bool, 'processed' => int, 'remaining' => int]
+     */
+    public function runBatchCollection(int $batchSize = 2, ?int $runId = null): array
+    {
+        // Get LLM models
+        $llmModels = [
+            'gpt4' => config('app.models.gpt4'),
+            'gpt35' => config('app.models.gpt35'),
+            'claude' => config('app.models.claude'),
+            'gemini' => config('app.models.gemini'),
+            'perplexity' => config('app.models.perplexity'),
+        ];
+
+        // Get all topics
+        $allTopics = Topic::all();
+
+        if (empty($allTopics)) {
+            throw new \RuntimeException('No topics found for collection');
+        }
+
+        // Create or get existing run
+        if ($runId === null) {
+            $totalQueries = count($allTopics) * count($llmModels);
+            $runId = MonitoringRun::create($totalQueries, 'Batch data collection');
+            $processedTopics = [];
+        } else {
+            // Get already processed topics from this run
+            $processedTopics = $this->getProcessedTopics($runId);
+        }
+
+        // Get topics to process in this batch
+        $topicsToProcess = array_filter($allTopics, function($topic) use ($processedTopics) {
+            return !in_array($topic['id'], $processedTopics);
+        });
+
+        $topicsToProcess = array_slice($topicsToProcess, 0, $batchSize);
+
+        log_message("Batch collection run #$runId: processing " . count($topicsToProcess) . " topics", 'info');
+
+        // Collect data for batch
+        foreach ($topicsToProcess as $topic) {
+            $this->collectTopicData($runId, $topic, $llmModels);
+            $processedTopics[] = $topic['id'];
+        }
+
+        // Check if all topics processed
+        $remaining = count($allTopics) - count($processedTopics);
+        $completed = $remaining === 0;
+
+        if ($completed) {
+            MonitoringRun::markCompleted($runId);
+            log_message("Completed batch collection run #$runId", 'info');
+        }
+
+        return [
+            'run_id' => $runId,
+            'completed' => $completed,
+            'processed' => count($processedTopics),
+            'total' => count($allTopics),
+            'remaining' => $remaining,
+        ];
+    }
+
+    /**
+     * Get list of topic IDs already processed in a run
+     */
+    private function getProcessedTopics(int $runId): array
+    {
+        $db = Connection::getInstance();
+        $query = "SELECT DISTINCT topic_id FROM llm_responses WHERE monitoring_run_id = ?";
+        $result = $db->query($query, [$runId]);
+
+        return array_column($result, 'topic_id');
+    }
+
+    /**
      * Collect data for a specific topic
      * OPTIMIZED: Reduced number of API calls for faster collection
      */

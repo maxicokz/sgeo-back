@@ -1,10 +1,85 @@
 // SGEO Analytics Dashboard JavaScript
 
 /**
- * Start data collection
+ * Start data collection (batch mode for Plesk compatibility)
  */
 async function startCollection() {
-    if (!confirm('Start a new data collection run? This may take several minutes.')) {
+    // Show mode selection
+    const mode = confirm(
+        '✅ Рекомендуется: Пакетный режим (для Plesk shared hosting)\n' +
+        '❌ Не рекомендуется: Полный режим (может превысить лимит времени)\n\n' +
+        'OK = Пакетный режим\nОтмена = Полный режим'
+    );
+
+    if (mode) {
+        // Batch mode (recommended for Plesk)
+        startBatchCollection();
+    } else {
+        // Full mode (may timeout on shared hosting)
+        startFullCollection();
+    }
+}
+
+/**
+ * Start batch collection (Plesk-safe)
+ */
+async function startBatchCollection() {
+    // Create progress modal
+    const modal = createProgressModal();
+    document.body.appendChild(modal);
+
+    let runId = null;
+    let completed = false;
+
+    try {
+        while (!completed) {
+            const formData = new FormData();
+            if (runId) formData.append('run_id', runId);
+            formData.append('batch_size', '2'); // 2 topics per batch
+            formData.append('csrf_token', getCsrfToken());
+
+            const response = await fetch('/api/collect-batch.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Unknown error');
+            }
+
+            runId = data.run_id;
+            completed = data.completed;
+
+            // Update progress
+            updateProgressModal(modal, data.progress, data.message);
+
+            if (!completed) {
+                // Wait 2 seconds before next batch to avoid rate limiting
+                await sleep(2000);
+            }
+        }
+
+        // Success
+        setTimeout(() => {
+            modal.remove();
+            alert('✅ Сбор данных завершен успешно!');
+            window.location.reload();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Batch collection error:', error);
+        modal.remove();
+        alert('❌ Ошибка сбора данных: ' + error.message);
+    }
+}
+
+/**
+ * Start full collection (original mode)
+ */
+async function startFullCollection() {
+    if (!confirm('⚠️ Внимание: Полный режим может превысить лимиты времени на shared hosting.\n\nПродолжить?')) {
         return;
     }
 
@@ -23,17 +98,69 @@ async function startCollection() {
         const data = await response.json();
 
         if (data.success) {
-            alert(`Data collection started! Run ID: ${data.run_id}`);
-
-            // Monitor run progress
+            alert(`Сбор данных запущен! Run ID: ${data.run_id}`);
             monitorRunProgress(data.run_id);
         } else {
-            alert('Failed to start data collection: ' + (data.error || 'Unknown error'));
+            alert('Ошибка запуска: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error starting collection:', error);
-        alert('Error starting data collection. Check console for details.');
+        alert('Ошибка запуска сбора данных. Проверьте консоль.');
     }
+}
+
+/**
+ * Create progress modal
+ */
+function createProgressModal() {
+    const modal = document.createElement('div');
+    modal.id = 'batch-progress-modal';
+    modal.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 10px; min-width: 400px; max-width: 500px;">
+                <h3 style="margin-top: 0;">🚀 Сбор данных</h3>
+                <div style="margin: 20px 0;">
+                    <div style="background: #f0f0f0; height: 30px; border-radius: 15px; overflow: hidden;">
+                        <div id="progress-bar" style="background: linear-gradient(to right, #3498db, #2ecc71); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="progress-text" style="margin-top: 10px; text-align: center; color: #666;"></div>
+                </div>
+                <p style="margin: 0; font-size: 12px; color: #999; text-align: center;">Пожалуйста, не закрывайте эту страницу</p>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+/**
+ * Update progress modal
+ */
+function updateProgressModal(modal, progress, message) {
+    const progressBar = modal.querySelector('#progress-bar');
+    const progressText = modal.querySelector('#progress-text');
+
+    progressBar.style.width = progress + '%';
+    progressText.textContent = message;
+}
+
+/**
+ * Get CSRF token from session
+ */
+function getCsrfToken() {
+    // Try to get from meta tag first
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) return metaTag.content;
+
+    // Fallback: try to get from cookie
+    const match = document.cookie.match(/csrf_token=([^;]+)/);
+    return match ? match[1] : '';
+}
+
+/**
+ * Sleep helper
+ */
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
