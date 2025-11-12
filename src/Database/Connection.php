@@ -36,11 +36,18 @@ class Connection
         if (self::$instance === null) {
             try {
                 $driver = self::$config['driver'] ?? 'mysql';
+                $host = self::$config['host'];
+
+                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
+                // This prevents socket file issues on different systems
+                if ($driver === 'mysql' && $host === 'localhost') {
+                    $host = '127.0.0.1';
+                }
 
                 if ($driver === 'mysql') {
                     $dsn = sprintf(
                         'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                        self::$config['host'],
+                        $host,
                         self::$config['port'],
                         self::$config['database'],
                         self::$config['charset'] ?? 'utf8mb4'
@@ -49,7 +56,7 @@ class Connection
                     // PostgreSQL
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
-                        self::$config['host'],
+                        $host,
                         self::$config['port'],
                         self::$config['database']
                     );
@@ -62,8 +69,19 @@ class Connection
                     self::$config['options']
                 );
             } catch (PDOException $e) {
-                error_log('Database connection failed: ' . $e->getMessage());
-                throw new \RuntimeException('Database connection failed: ' . $e->getMessage());
+                $errorMsg = 'Database connection failed: ' . $e->getMessage();
+
+                // Add helpful error messages for common issues
+                if (strpos($e->getMessage(), 'No such file or directory') !== false) {
+                    $errorMsg .= "\nHint: Check DB_HOST and DB_PORT in .env file. Use 127.0.0.1 instead of localhost for MySQL.";
+                } elseif (strpos($e->getMessage(), 'Access denied') !== false) {
+                    $errorMsg .= "\nHint: Check DB_USER and DB_PASSWORD in .env file.";
+                } elseif (strpos($e->getMessage(), 'Unknown database') !== false) {
+                    $errorMsg .= "\nHint: Database '{$self::$config['database']}' does not exist. Create it first.";
+                }
+
+                error_log($errorMsg);
+                throw new \RuntimeException($errorMsg);
             }
         }
 
