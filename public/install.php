@@ -42,21 +42,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Test database connection
             try {
                 $host = $config['DB_HOST'];
+                $socket = $_POST['db_socket'] ?? '';
 
-                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
-                // This prevents socket file issues on different systems
-                if ($dbDriver === 'mysql' && $host === 'localhost') {
-                    $host = '127.0.0.1';
+                if (!empty($socket)) {
+                    $config['DB_SOCKET'] = $socket;
                 }
 
                 if ($dbDriver === 'mysql') {
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                        $host,
-                        $config['DB_PORT'],
-                        $config['DB_NAME']
-                    );
+                    // Try unix socket first if provided or if localhost is used
+                    if (!empty($socket)) {
+                        $dsn = sprintf(
+                            'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
+                            $socket,
+                            $config['DB_NAME']
+                        );
+                    } elseif ($host === 'localhost') {
+                        // Try common socket locations for shared hosting
+                        $commonSockets = [
+                            '/var/run/mysqld/mysqld.sock',
+                            '/tmp/mysql.sock',
+                            '/var/lib/mysql/mysql.sock',
+                            '/Applications/MAMP/tmp/mysql/mysql.sock',
+                            ini_get('mysqli.default_socket')
+                        ];
+
+                        $foundSocket = null;
+                        foreach ($commonSockets as $socketPath) {
+                            if (!empty($socketPath) && file_exists($socketPath)) {
+                                $foundSocket = $socketPath;
+                                break;
+                            }
+                        }
+
+                        if ($foundSocket) {
+                            $dsn = sprintf(
+                                'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
+                                $foundSocket,
+                                $config['DB_NAME']
+                            );
+                            $config['DB_SOCKET'] = $foundSocket;
+                        } else {
+                            // Fallback to TCP/IP with 127.0.0.1
+                            $dsn = sprintf(
+                                'mysql:host=127.0.0.1;port=%s;dbname=%s;charset=utf8mb4',
+                                $config['DB_PORT'],
+                                $config['DB_NAME']
+                            );
+                        }
+                    } else {
+                        // Use provided host (TCP/IP)
+                        $dsn = sprintf(
+                            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                            $host,
+                            $config['DB_PORT'],
+                            $config['DB_NAME']
+                        );
+                    }
                 } else {
+                    // PostgreSQL
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
                         $host,
@@ -104,21 +147,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $dbDriver = $config['DB_DRIVER'] ?? 'mysql';
                 $host = $config['DB_HOST'];
-
-                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
-                // This prevents socket file issues on different systems
-                if ($dbDriver === 'mysql' && $host === 'localhost') {
-                    $host = '127.0.0.1';
-                }
+                $socket = $config['DB_SOCKET'] ?? '';
 
                 if ($dbDriver === 'mysql') {
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                        $host,
-                        $config['DB_PORT'],
-                        $config['DB_NAME']
-                    );
+                    // Try unix socket first if provided or if localhost is used
+                    if (!empty($socket)) {
+                        $dsn = sprintf(
+                            'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
+                            $socket,
+                            $config['DB_NAME']
+                        );
+                    } elseif ($host === 'localhost') {
+                        // Try common socket locations for shared hosting
+                        $commonSockets = [
+                            '/var/run/mysqld/mysqld.sock',
+                            '/tmp/mysql.sock',
+                            '/var/lib/mysql/mysql.sock',
+                            '/Applications/MAMP/tmp/mysql/mysql.sock',
+                            ini_get('mysqli.default_socket')
+                        ];
+
+                        $foundSocket = null;
+                        foreach ($commonSockets as $socketPath) {
+                            if (!empty($socketPath) && file_exists($socketPath)) {
+                                $foundSocket = $socketPath;
+                                break;
+                            }
+                        }
+
+                        if ($foundSocket) {
+                            $dsn = sprintf(
+                                'mysql:unix_socket=%s;dbname=%s;charset=utf8mb4',
+                                $foundSocket,
+                                $config['DB_NAME']
+                            );
+                        } else {
+                            // Fallback to TCP/IP with 127.0.0.1
+                            $dsn = sprintf(
+                                'mysql:host=127.0.0.1;port=%s;dbname=%s;charset=utf8mb4',
+                                $config['DB_PORT'],
+                                $config['DB_NAME']
+                            );
+                        }
+                    } else {
+                        // Use provided host (TCP/IP)
+                        $dsn = sprintf(
+                            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                            $host,
+                            $config['DB_PORT'],
+                            $config['DB_NAME']
+                        );
+                    }
                 } else {
+                    // PostgreSQL
                     $dsn = sprintf(
                         'pgsql:host=%s;port=%s;dbname=%s',
                         $host,
@@ -396,6 +477,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" name="db_password" required>
                 </div>
 
+                <div class="form-group" id="mysql_socket_group" style="display: none;">
+                    <label>MySQL Socket Path (Optional)</label>
+                    <input type="text" name="db_socket" placeholder="e.g., /var/run/mysqld/mysqld.sock">
+                    <p class="help-text">Leave empty to auto-detect. Only for MySQL/MariaDB on shared hosting with socket connection.</p>
+                </div>
+
                 <div class="form-group">
                     <label>OpenRouter API Key</label>
                     <input type="text" name="openrouter_key" required>
@@ -458,8 +545,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function updatePort() {
             const driver = document.getElementById('db_driver').value;
             const portField = document.getElementById('db_port');
+            const socketGroup = document.getElementById('mysql_socket_group');
+
             portField.value = driver === 'mysql' ? '3306' : '5432';
+
+            // Show socket field only for MySQL
+            if (socketGroup) {
+                socketGroup.style.display = driver === 'mysql' ? 'block' : 'none';
+            }
         }
+
+        // Show socket field on page load if MySQL is selected
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePort();
+        });
     </script>
 </body>
 </html>

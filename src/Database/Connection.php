@@ -37,21 +37,64 @@ class Connection
             try {
                 $driver = self::$config['driver'] ?? 'mysql';
                 $host = self::$config['host'];
-
-                // For MySQL, convert localhost to 127.0.0.1 to force TCP/IP connection
-                // This prevents socket file issues on different systems
-                if ($driver === 'mysql' && $host === 'localhost') {
-                    $host = '127.0.0.1';
-                }
+                $socket = self::$config['socket'] ?? '';
 
                 if ($driver === 'mysql') {
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                        $host,
-                        self::$config['port'],
-                        self::$config['database'],
-                        self::$config['charset'] ?? 'utf8mb4'
-                    );
+                    // Priority 1: Use unix_socket if explicitly provided
+                    if (!empty($socket)) {
+                        $dsn = sprintf(
+                            'mysql:unix_socket=%s;dbname=%s;charset=%s',
+                            $socket,
+                            self::$config['database'],
+                            self::$config['charset'] ?? 'utf8mb4'
+                        );
+                    }
+                    // Priority 2: Auto-detect socket for localhost connections
+                    elseif ($host === 'localhost') {
+                        // Try common socket locations for shared hosting
+                        $commonSockets = [
+                            '/var/run/mysqld/mysqld.sock',
+                            '/tmp/mysql.sock',
+                            '/var/lib/mysql/mysql.sock',
+                            '/Applications/MAMP/tmp/mysql/mysql.sock',
+                            ini_get('mysqli.default_socket')
+                        ];
+
+                        $foundSocket = null;
+                        foreach ($commonSockets as $socketPath) {
+                            if (!empty($socketPath) && file_exists($socketPath)) {
+                                $foundSocket = $socketPath;
+                                break;
+                            }
+                        }
+
+                        if ($foundSocket) {
+                            $dsn = sprintf(
+                                'mysql:unix_socket=%s;dbname=%s;charset=%s',
+                                $foundSocket,
+                                self::$config['database'],
+                                self::$config['charset'] ?? 'utf8mb4'
+                            );
+                        } else {
+                            // Fallback to TCP/IP with 127.0.0.1
+                            $dsn = sprintf(
+                                'mysql:host=127.0.0.1;port=%s;dbname=%s;charset=%s',
+                                self::$config['port'],
+                                self::$config['database'],
+                                self::$config['charset'] ?? 'utf8mb4'
+                            );
+                        }
+                    }
+                    // Priority 3: Use TCP/IP with provided host
+                    else {
+                        $dsn = sprintf(
+                            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+                            $host,
+                            self::$config['port'],
+                            self::$config['database'],
+                            self::$config['charset'] ?? 'utf8mb4'
+                        );
+                    }
                 } else {
                     // PostgreSQL
                     $dsn = sprintf(

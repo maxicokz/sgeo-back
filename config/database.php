@@ -6,6 +6,7 @@ return [
 
     'host' => $_ENV['DB_HOST'] ?? 'localhost',
     'port' => $_ENV['DB_PORT'] ?? '3306',
+    'socket' => $_ENV['DB_SOCKET'] ?? '',
     'database' => $_ENV['DB_NAME'] ?? 'sgeo_analytics',
     'username' => $_ENV['DB_USER'] ?? 'root',
     'password' => $_ENV['DB_PASSWORD'] ?? '',
