@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Responses Collector - Web Interface</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🤖 AI Responses Collector</h1>
+            <p class="subtitle">Сбор ответов от множества AI моделей</p>
+        </header>
+
+        <!-- Statistics Panel -->
+        <section class="stats-panel" id="statsPanel">
+            <div class="stat-card">
+                <div class="stat-value" id="totalResponses">-</div>
+                <div class="stat-label">Всего ответов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalModels">-</div>
+                <div class="stat-label">Моделей</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalLanguages">-</div>
+                <div class="stat-label">Языков</div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel: Request Form -->
+            <section class="panel request-panel">
+                <h2>📝 Новый запрос</h2>
+
+                <!-- Prompt Input -->
+                <div class="form-group">
+                    <label for="promptInput">Промпт:</label>
+                    <textarea
+                        id="promptInput"
+                        class="prompt-input"
+                        placeholder="Введите ваш вопрос или промпт..."
+                        rows="4"
+                    ></textarea>
+                </div>
+
+                <!-- Sample Prompts -->
+                <div class="form-group">
+                    <label>Примеры промптов:</label>
+                    <div class="sample-prompts" id="samplePrompts">
+                        <button class="sample-btn" data-prompt="Что такое искусственный интеллект?">
+                            Что такое ИИ?
+                        </button>
+                        <button class="sample-btn" data-prompt="Объясни квантовые вычисления простыми словами">
+                            Квантовые вычисления
+                        </button>
+                        <button class="sample-btn" data-prompt="Какая столица Казахстана?">
+                            Столица Казахстана
+                        </button>
+                        <button class="sample-btn" data-prompt="Как работает машинное обучение?">
+                            Машинное обучение
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="form-group">
+                    <label>Выберите модели:</label>
+                    <div class="model-selection" id="modelSelection">
+                        <div class="loading">Загрузка моделей...</div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="collectBtn" class="btn btn-primary">
+                        🚀 Собрать ответы
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        🗑️ Очистить
+                    </button>
+                </div>
+
+                <!-- Progress -->
+                <div id="progressSection" class="progress-section hidden">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <p id="progressText" class="progress-text">Обработка...</p>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results -->
+            <section class="panel results-panel">
+                <div class="panel-header">
+                    <h2>📊 Результаты</h2>
+                    <div class="filter-controls">
+                        <select id="modelFilter" class="filter-select">
+                            <option value="">Все модели</option>
+                        </select>
+                        <input
+                            type="number"
+                            id="limitInput"
+                            class="limit-input"
+                            placeholder="Лимит"
+                            value="20"
+                            min="1"
+                            max="100"
+                        >
+                        <button id="refreshBtn" class="btn btn-small">🔄 Обновить</button>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="table-container">
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Модель</th>
+                                <th>Промпт</th>
+                                <th>Ответ</th>
+                                <th>Язык</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="6" class="no-data">Нет данных. Выполните запрос для получения результатов.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modal for detailed view -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Детали ответа</h2>
+            <div id="detailContent" class="detail-content">
+                <!-- Content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
