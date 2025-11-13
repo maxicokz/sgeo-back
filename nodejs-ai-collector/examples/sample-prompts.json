@@ -1,0 +1,37 @@
+{
+  "general": [
+    "What is artificial intelligence?",
+    "Explain quantum computing in simple terms",
+    "How does machine learning work?",
+    "What are the benefits of cloud computing?",
+    "Describe blockchain technology"
+  ],
+  "russian": [
+    "Что такое искусственный интеллект?",
+    "Объясни квантовые вычисления простыми словами",
+    "Как работает машинное обучение?",
+    "Какие преимущества у облачных вычислений?",
+    "Опиши технологию блокчейн"
+  ],
+  "kazakhstan": [
+    "Какая столица Казахстана?",
+    "Расскажи о культуре Казахстана",
+    "Какие достопримечательности есть в Алматы?",
+    "Расскажи об истории Казахстана",
+    "Какие языки используются в Казахстане?"
+  ],
+  "technical": [
+    "How to optimize database queries?",
+    "What are the best practices for API design?",
+    "Explain microservices architecture",
+    "How to implement authentication in web applications?",
+    "What is the difference between SQL and NoSQL databases?"
+  ],
+  "comparison": [
+    "Compare Python and JavaScript for backend development",
+    "React vs Vue: which one should I choose?",
+    "SQL vs NoSQL: when to use each?",
+    "Cloud providers comparison: AWS, Azure, Google Cloud",
+    "Microservices vs Monolithic architecture"
+  ]
+}

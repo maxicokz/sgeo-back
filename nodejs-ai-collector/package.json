@@ -1,0 +1,33 @@
+{
+  "name": "ai-responses-collector",
+  "version": "1.0.0",
+  "description": "Multi-AI responses collector using OpenRouter and Supabase",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "collect": "node src/collect.js",
+    "example": "node examples/basic-usage.js",
+    "batch": "node examples/batch-collect.js",
+    "setup": "cp .env.example .env && echo 'Created .env file. Please configure it with your credentials.'"
+  },
+  "keywords": [
+    "openrouter",
+    "supabase",
+    "ai",
+    "chatgpt",
+    "gemini",
+    "perplexity",
+    "copilot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "franc": "^6.2.0",
+    "uuid": "^9.0.1"
+  }
+}
