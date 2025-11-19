@@ -40,6 +40,13 @@ const languageMap = {
   slv: 'sl', // Slovenian
   cat: 'ca', // Catalan
   kaz: 'kk', // Kazakh
+  uzn: 'uz', // Northern Uzbek
+  uzs: 'uz', // Southern Uzbek
+  uig: 'ug', // Uyghur
+  tgk: 'tg', // Tajik
+  kir: 'ky', // Kyrgyz
+  tuk: 'tk', // Turkmen
+  aze: 'az', // Azerbaijani
 };
 
 /**
@@ -141,6 +148,12 @@ export function getLanguageName(code) {
     sl: 'Slovenian',
     ca: 'Catalan',
     kk: 'Kazakh',
+    uz: 'Uzbek',
+    ug: 'Uyghur',
+    tg: 'Tajik',
+    ky: 'Kyrgyz',
+    tk: 'Turkmen',
+    az: 'Azerbaijani',
   };
 
   return names[code] || 'Unknown';
