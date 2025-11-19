@@ -5,13 +5,22 @@ const API_BASE = '/api';
 let availableModels = [];
 let selectedModels = [];
 let isCollecting = false;
+let isBatchMode = false;
 
 // DOM Elements
+const singleModeBtn = document.getElementById('singleModeBtn');
+const batchModeBtn = document.getElementById('batchModeBtn');
+const singlePromptSection = document.getElementById('singlePromptSection');
+const batchPromptSection = document.getElementById('batchPromptSection');
 const promptInput = document.getElementById('promptInput');
+const batchPromptsInput = document.getElementById('batchPromptsInput');
 const modelSelection = document.getElementById('modelSelection');
+const selectAllModelsBtn = document.getElementById('selectAllModelsBtn');
 const collectBtn = document.getElementById('collectBtn');
 const clearBtn = document.getElementById('clearBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const clearResultsBtn = document.getElementById('clearResultsBtn');
 const resultsBody = document.getElementById('resultsBody');
 const progressSection = document.getElementById('progressSection');
 const progressFill = document.getElementById('progressFill');
@@ -19,21 +28,36 @@ const progressText = document.getElementById('progressText');
 const modelFilter = document.getElementById('modelFilter');
 const limitInput = document.getElementById('limitInput');
 const detailModal = document.getElementById('detailModal');
+const savePromptsModal = document.getElementById('savePromptsModal');
 const detailContent = document.getElementById('detailContent');
 const totalResponses = document.getElementById('totalResponses');
 const totalModels = document.getElementById('totalModels');
 const totalLanguages = document.getElementById('totalLanguages');
+
+// Saved prompts
+const savePromptsBtn = document.getElementById('savePromptsBtn');
+const loadPromptsBtn = document.getElementById('loadPromptsBtn');
+const savedPromptsList = document.getElementById('savedPromptsList');
+const deletePromptSetBtn = document.getElementById('deletePromptSetBtn');
+const promptSetName = document.getElementById('promptSetName');
+const confirmSavePromptsBtn = document.getElementById('confirmSavePromptsBtn');
+const cancelSavePromptsBtn = document.getElementById('cancelSavePromptsBtn');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadModels();
     loadResponses();
     loadStatistics();
+    loadSavedPromptsList();
     setupEventListeners();
 });
 
 // Setup Event Listeners
 function setupEventListeners() {
+    // Mode toggle
+    singleModeBtn.addEventListener('click', () => switchMode('single'));
+    batchModeBtn.addEventListener('click', () => switchMode('batch'));
+
     // Sample prompts
     document.querySelectorAll('.sample-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -41,18 +65,28 @@ function setupEventListeners() {
         });
     });
 
+    // Model selection
+    selectAllModelsBtn.addEventListener('click', selectAllModels);
+
     // Collect button
     collectBtn.addEventListener('click', handleCollect);
 
     // Clear button
     clearBtn.addEventListener('click', () => {
         promptInput.value = '';
+        batchPromptsInput.value = '';
         selectedModels = [];
         updateModelSelection();
     });
 
     // Refresh button
     refreshBtn.addEventListener('click', loadResponses);
+
+    // Export CSV
+    exportCsvBtn.addEventListener('click', exportToCSV);
+
+    // Clear all results
+    clearResultsBtn.addEventListener('click', clearAllResults);
 
     // Model filter
     modelFilter.addEventListener('change', loadResponses);
@@ -61,10 +95,47 @@ function setupEventListeners() {
     limitInput.addEventListener('change', loadResponses);
 
     // Modal close
-    document.querySelector('.modal-close').addEventListener('click', closeModal);
+    document.querySelectorAll('.modal-close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', () => {
+            closeBtn.closest('.modal').classList.remove('active');
+        });
+    });
+
     detailModal.addEventListener('click', (e) => {
         if (e.target === detailModal) closeModal();
     });
+
+    // Saved prompts
+    savePromptsBtn.addEventListener('click', () => {
+        savePromptsModal.classList.add('active');
+        promptSetName.value = '';
+        promptSetName.focus();
+    });
+
+    confirmSavePromptsBtn.addEventListener('click', savePromptSet);
+    cancelSavePromptsBtn.addEventListener('click', () => {
+        savePromptsModal.classList.remove('active');
+    });
+
+    savedPromptsList.addEventListener('change', loadPromptSet);
+    deletePromptSetBtn.addEventListener('click', deletePromptSet);
+}
+
+// Switch mode
+function switchMode(mode) {
+    isBatchMode = mode === 'batch';
+
+    if (isBatchMode) {
+        singleModeBtn.classList.remove('active');
+        batchModeBtn.classList.add('active');
+        singlePromptSection.classList.add('hidden');
+        batchPromptSection.classList.remove('hidden');
+    } else {
+        batchModeBtn.classList.remove('active');
+        singleModeBtn.classList.add('active');
+        batchPromptSection.classList.add('hidden');
+        singlePromptSection.classList.remove('hidden');
+    }
 }
 
 // Load available models
@@ -120,6 +191,18 @@ function toggleModel(modelId) {
     renderModelSelection();
 }
 
+// Select all models
+function selectAllModels() {
+    if (selectedModels.length === availableModels.length) {
+        // Deselect all
+        selectedModels = [];
+    } else {
+        // Select all
+        selectedModels = availableModels.map(m => m.id);
+    }
+    renderModelSelection();
+}
+
 // Update model selection
 function updateModelSelection() {
     renderModelSelection();
@@ -138,6 +221,15 @@ function populateModelFilter() {
 
 // Handle collect
 async function handleCollect() {
+    if (isBatchMode) {
+        await handleBatchCollect();
+    } else {
+        await handleSingleCollect();
+    }
+}
+
+// Handle single collect
+async function handleSingleCollect() {
     const prompt = promptInput.value.trim();
 
     if (!prompt) {
@@ -150,46 +242,89 @@ async function handleCollect() {
         return;
     }
 
+    await collectFromModels([prompt]);
+}
+
+// Handle batch collect
+async function handleBatchCollect() {
+    const promptsText = batchPromptsInput.value.trim();
+
+    if (!promptsText) {
+        showToast('Введите промпты (один на строку)', 'warning');
+        return;
+    }
+
+    const prompts = promptsText.split('\n')
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+
+    if (prompts.length === 0) {
+        showToast('Введите хотя бы один промпт', 'warning');
+        return;
+    }
+
+    if (selectedModels.length === 0) {
+        showToast('Выберите хотя бы одну модель', 'warning');
+        return;
+    }
+
+    showToast(`Обработка ${prompts.length} промптов с ${selectedModels.length} моделями...`, 'success');
+    await collectFromModels(prompts);
+}
+
+// Collect from models
+async function collectFromModels(prompts) {
     if (isCollecting) {
         return;
     }
 
     isCollecting = true;
     collectBtn.disabled = true;
-    showProgress(0, 'Отправка запросов...');
+
+    const totalRequests = prompts.length * selectedModels.length;
+    let completedRequests = 0;
+
+    showProgress(0, `Обработка 0 из ${totalRequests} запросов...`);
 
     try {
-        const response = await fetch(`${API_BASE}/collect`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                prompt,
-                models: selectedModels,
-            }),
-        });
+        for (const prompt of prompts) {
+            const response = await fetch(`${API_BASE}/collect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt,
+                    models: selectedModels,
+                }),
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (data.success) {
-            showProgress(100, 'Готово!');
-            showToast(
-                `Успешно собрано ${data.results.successful} ответов из ${data.results.total}`,
-                'success'
-            );
+            if (data.success) {
+                completedRequests += selectedModels.length;
+                const progress = (completedRequests / totalRequests) * 100;
+                showProgress(progress, `Обработка ${completedRequests} из ${totalRequests} запросов...`);
+            } else {
+                throw new Error(data.error || 'Неизвестная ошибка');
+            }
 
-            // Reload data
-            await loadResponses();
-            await loadStatistics();
-
-            // Clear form
-            promptInput.value = '';
-            selectedModels = [];
-            updateModelSelection();
-        } else {
-            throw new Error(data.error || 'Неизвестная ошибка');
+            // Small delay between prompts
+            if (prompts.indexOf(prompt) < prompts.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
+
+        showProgress(100, 'Готово!');
+        showToast(`Успешно обработано ${completedRequests} запросов`, 'success');
+
+        // Reload data
+        await loadResponses();
+        await loadStatistics();
+
+        // Clear form
+        promptInput.value = '';
+        batchPromptsInput.value = '';
     } catch (error) {
         showToast('Ошибка: ' + error.message, 'error');
     } finally {
@@ -314,6 +449,119 @@ async function loadStatistics() {
     } catch (error) {
         console.error('Error loading statistics:', error);
     }
+}
+
+// Export to CSV
+async function exportToCSV() {
+    try {
+        const limit = limitInput.value || 1000;
+        const model = modelFilter.value;
+
+        let url = `${API_BASE}/export/csv?limit=${limit}`;
+        if (model) {
+            url += `&modelName=${model}`;
+        }
+
+        window.location.href = url;
+        showToast('Экспорт начат...', 'success');
+    } catch (error) {
+        showToast('Ошибка экспорта: ' + error.message, 'error');
+    }
+}
+
+// Clear all results
+async function clearAllResults() {
+    if (!confirm('Вы уверены, что хотите удалить ВСЕ результаты? Это действие необратимо!')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/responses`, {
+            method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Все результаты удалены', 'success');
+            await loadResponses();
+            await loadStatistics();
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Ошибка при удалении: ' + error.message, 'error');
+    }
+}
+
+// Saved prompts management
+function loadSavedPromptsList() {
+    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
+    savedPromptsList.innerHTML = '<option value="">-- Выберите набор --</option>';
+
+    Object.keys(saved).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        savedPromptsList.appendChild(option);
+    });
+}
+
+function savePromptSet() {
+    const name = promptSetName.value.trim();
+    const promptsText = batchPromptsInput.value.trim();
+
+    if (!name) {
+        showToast('Введите название набора', 'warning');
+        return;
+    }
+
+    if (!promptsText) {
+        showToast('Введите промпты для сохранения', 'warning');
+        return;
+    }
+
+    const prompts = promptsText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
+    saved[name] = prompts;
+    localStorage.setItem('savedPrompts', JSON.stringify(saved));
+
+    showToast(`Набор "${name}" сохранен`, 'success');
+    loadSavedPromptsList();
+    savePromptsModal.classList.remove('active');
+}
+
+function loadPromptSet() {
+    const name = savedPromptsList.value;
+    if (!name) return;
+
+    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
+    const prompts = saved[name];
+
+    if (prompts) {
+        batchPromptsInput.value = prompts.join('\n');
+        showToast(`Набор "${name}" загружен`, 'success');
+    }
+}
+
+function deletePromptSet() {
+    const name = savedPromptsList.value;
+    if (!name) {
+        showToast('Выберите набор для удаления', 'warning');
+        return;
+    }
+
+    if (!confirm(`Удалить набор "${name}"?`)) {
+        return;
+    }
+
+    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
+    delete saved[name];
+    localStorage.setItem('savedPrompts', JSON.stringify(saved));
+
+    showToast(`Набор "${name}" удален`, 'success');
+    loadSavedPromptsList();
+    savedPromptsList.value = '';
 }
 
 // Show progress

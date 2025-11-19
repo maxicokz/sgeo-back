@@ -36,39 +36,78 @@
             <section class="panel request-panel">
                 <h2>📝 Новый запрос</h2>
 
-                <!-- Prompt Input -->
+                <!-- Mode Toggle -->
                 <div class="form-group">
-                    <label for="promptInput">Промпт:</label>
-                    <textarea
-                        id="promptInput"
-                        class="prompt-input"
-                        placeholder="Введите ваш вопрос или промпт..."
-                        rows="4"
-                    ></textarea>
+                    <label>Режим:</label>
+                    <div class="mode-toggle">
+                        <button id="singleModeBtn" class="mode-btn active">Один промпт</button>
+                        <button id="batchModeBtn" class="mode-btn">Пакетная обработка</button>
+                    </div>
                 </div>
 
-                <!-- Sample Prompts -->
-                <div class="form-group">
-                    <label>Примеры промптов:</label>
-                    <div class="sample-prompts" id="samplePrompts">
-                        <button class="sample-btn" data-prompt="Что такое искусственный интеллект?">
-                            Что такое ИИ?
-                        </button>
-                        <button class="sample-btn" data-prompt="Объясни квантовые вычисления простыми словами">
-                            Квантовые вычисления
-                        </button>
-                        <button class="sample-btn" data-prompt="Какая столица Казахстана?">
-                            Столица Казахстана
-                        </button>
-                        <button class="sample-btn" data-prompt="Как работает машинное обучение?">
-                            Машинное обучение
-                        </button>
+                <!-- Single Prompt Input -->
+                <div id="singlePromptSection">
+                    <div class="form-group">
+                        <label for="promptInput">Промпт:</label>
+                        <textarea
+                            id="promptInput"
+                            class="prompt-input"
+                            placeholder="Введите ваш вопрос или промпт..."
+                            rows="4"
+                        ></textarea>
+                    </div>
+
+                    <!-- Sample Prompts -->
+                    <div class="form-group">
+                        <label>Примеры промптов:</label>
+                        <div class="sample-prompts" id="samplePrompts">
+                            <button class="sample-btn" data-prompt="Что такое искусственный интеллект?">
+                                Что такое ИИ?
+                            </button>
+                            <button class="sample-btn" data-prompt="Объясни квантовые вычисления простыми словами">
+                                Квантовые вычисления
+                            </button>
+                            <button class="sample-btn" data-prompt="Какая столица Казахстана?">
+                                Столица Казахстана
+                            </button>
+                            <button class="sample-btn" data-prompt="Как работает машинное обучение?">
+                                Машинное обучение
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Prompts Input -->
+                <div id="batchPromptSection" class="hidden">
+                    <div class="form-group">
+                        <label for="batchPromptsInput">Промпты (один на строку):</label>
+                        <textarea
+                            id="batchPromptsInput"
+                            class="prompt-input"
+                            placeholder="Введите промпты, каждый с новой строки...&#10;Что такое AI?&#10;Объясни блокчейн&#10;Расскажи о машинном обучении"
+                            rows="10"
+                        ></textarea>
+                    </div>
+
+                    <!-- Saved Prompts Management -->
+                    <div class="form-group">
+                        <div class="saved-prompts-controls">
+                            <button id="savePromptsBtn" class="btn btn-small">💾 Сохранить промпты</button>
+                            <button id="loadPromptsBtn" class="btn btn-small">📂 Загрузить промпты</button>
+                            <select id="savedPromptsList" class="saved-prompts-select">
+                                <option value="">-- Выберите набор --</option>
+                            </select>
+                            <button id="deletePromptSetBtn" class="btn btn-small btn-danger">🗑️ Удалить набор</button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Model Selection -->
                 <div class="form-group">
-                    <label>Выберите модели:</label>
+                    <div class="models-header">
+                        <label>Выберите модели:</label>
+                        <button id="selectAllModelsBtn" class="btn btn-small">✓ Выбрать все</button>
+                    </div>
                     <div class="model-selection" id="modelSelection">
                         <div class="loading">Загрузка моделей...</div>
                     </div>
@@ -110,7 +149,9 @@
                             min="1"
                             max="100"
                         >
-                        <button id="refreshBtn" class="btn btn-small">🔄 Обновить</button>
+                        <button id="refreshBtn" class="btn btn-small">🔄</button>
+                        <button id="exportCsvBtn" class="btn btn-small">📥 CSV</button>
+                        <button id="clearResultsBtn" class="btn btn-small btn-danger">🗑️ Очистить всё</button>
                     </div>
                 </div>
 
@@ -145,6 +186,21 @@
             <h2>Детали ответа</h2>
             <div id="detailContent" class="detail-content">
                 <!-- Content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for saving prompts -->
+    <div id="savePromptsModal" class="modal">
+        <div class="modal-content modal-small">
+            <span class="modal-close">&times;</span>
+            <h2>Сохранить набор промптов</h2>
+            <div class="modal-body">
+                <input type="text" id="promptSetName" class="input-text" placeholder="Название набора...">
+                <div class="modal-actions">
+                    <button id="confirmSavePromptsBtn" class="btn btn-primary">💾 Сохранить</button>
+                    <button id="cancelSavePromptsBtn" class="btn btn-secondary">Отмена</button>
+                </div>
             </div>
         </div>
     </div>

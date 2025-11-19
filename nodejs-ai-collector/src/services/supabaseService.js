@@ -135,6 +135,43 @@ class SupabaseService {
       throw error;
     }
   }
+
+  /**
+   * Delete a response by ID
+   * @param {string} id - Response ID
+   * @returns {Promise<void>}
+   */
+  async deleteResponse(id) {
+    try {
+      const { error } = await this.client
+        .from('ai_responses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting response:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete all responses
+   * @returns {Promise<void>}
+   */
+  async deleteAllResponses() {
+    try {
+      const { error } = await this.client
+        .from('ai_responses')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting all responses:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SupabaseService();

@@ -212,4 +212,95 @@ router.get('/sample-prompts', (req, res) => {
   });
 });
 
+/**
+ * DELETE /api/responses/:id
+ * Delete a specific response by ID
+ */
+router.delete('/responses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await supabaseService.deleteResponse(id);
+
+    res.json({
+      success: true,
+      message: 'Response deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/responses
+ * Delete all responses
+ */
+router.delete('/responses', async (req, res) => {
+  try {
+    await supabaseService.deleteAllResponses();
+
+    res.json({
+      success: true,
+      message: 'All responses deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/export/csv
+ * Export responses to CSV
+ */
+router.get('/export/csv', async (req, res) => {
+  try {
+    const { limit, modelName, language } = req.query;
+
+    const options = {
+      limit: limit ? parseInt(limit) : 1000,
+    };
+
+    if (modelName) {
+      options.modelName = modelName;
+    }
+
+    if (language) {
+      options.language = language;
+    }
+
+    const responses = await supabaseService.getResponses(options);
+
+    // Generate CSV
+    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Tokens Used'];
+    const rows = responses.map(r => [
+      r.id,
+      r.created_at,
+      r.model_name,
+      r.language || 'N/A',
+      `"${(r.prompt || '').replace(/"/g, '""')}"`,
+      `"${(r.response || '').replace(/"/g, '""')}"`,
+      r.metadata?.usage?.total_tokens || 'N/A',
+    ]);
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="ai-responses-${Date.now()}.csv"`);
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 export default router;
