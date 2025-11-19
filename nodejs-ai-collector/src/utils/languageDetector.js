@@ -61,15 +61,34 @@ export function detectLanguage(text) {
 
   try {
     // franc returns ISO 639-3 code
-    const detected = franc(text, { minLength: 3 });
+    // Use higher minLength for better accuracy (10 chars minimum)
+    // Whitelist most common languages for better accuracy
+    const detected = franc(text, {
+      minLength: 10,
+      only: [
+        'eng', 'rus', 'spa', 'fra', 'deu', 'ita', 'por', 'pol', 'ukr',
+        'jpn', 'kor', 'zho', 'ara', 'hin', 'tur', 'vie', 'tha',
+        'kaz', 'uzn', 'uzs', 'tgk', 'kir', 'tuk', 'aze', 'uig'
+      ]
+    });
 
     // If detection failed or uncertain
     if (detected === 'und' || !detected) {
+      // For short texts, try without length restriction
+      if (text.trim().length < 10) {
+        const fallback = franc(text, { minLength: 3 });
+        if (fallback && fallback !== 'und') {
+          console.log(`Short text detected as: ${fallback} (less reliable)`);
+          return languageMap[fallback] || fallback;
+        }
+      }
       return 'unknown';
     }
 
-    // Map to ISO 639-1 or return the detected code
-    return languageMap[detected] || detected;
+    const result = languageMap[detected] || detected;
+    console.log(`Language detected: ${detected} → ${result} (text length: ${text.length})`);
+
+    return result;
   } catch (error) {
     console.error('Error detecting language:', error.message);
     return 'unknown';
@@ -87,16 +106,43 @@ export function detectLanguageWithConfidence(text) {
   }
 
   try {
-    const detected = franc(text, { minLength: 3 });
+    const detected = franc(text, {
+      minLength: 10,
+      only: [
+        'eng', 'rus', 'spa', 'fra', 'deu', 'ita', 'por', 'pol', 'ukr',
+        'jpn', 'kor', 'zho', 'ara', 'hin', 'tur', 'vie', 'tha',
+        'kaz', 'uzn', 'uzs', 'tgk', 'kir', 'tuk', 'aze', 'uig'
+      ]
+    });
 
     if (detected === 'und' || !detected) {
+      // Fallback for short texts
+      if (text.trim().length < 10) {
+        const fallback = franc(text, { minLength: 3 });
+        if (fallback && fallback !== 'und') {
+          return {
+            language: languageMap[fallback] || fallback,
+            confidence: 0.3 // Low confidence for short texts
+          };
+        }
+      }
       return { language: 'unknown', confidence: 0 };
     }
 
     const language = languageMap[detected] || detected;
 
-    // franc doesn't provide confidence scores, so we estimate based on text length
-    const confidence = Math.min(text.length / 100, 1);
+    // Estimate confidence based on text length
+    // Longer texts = higher confidence
+    let confidence;
+    if (text.length < 10) {
+      confidence = 0.3;
+    } else if (text.length < 30) {
+      confidence = 0.5;
+    } else if (text.length < 100) {
+      confidence = 0.7;
+    } else {
+      confidence = 0.9;
+    }
 
     return { language, confidence };
   } catch (error) {
