@@ -24,9 +24,8 @@ class AICollector {
       throw new Error(`Unknown model: ${modelName}. Available: ${Object.keys(this.models).join(', ')}`);
     }
 
-    // Detect language
+    // Detect language (disabled - returns null)
     const language = detectLanguage(prompt);
-    console.log(`🌐 Detected language: ${language}`);
 
     // Query the model
     const startTime = Date.now();

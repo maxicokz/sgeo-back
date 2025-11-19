@@ -55,6 +55,10 @@ const languageMap = {
  * @returns {string} ISO 639-1 language code or 'unknown'
  */
 export function detectLanguage(text) {
+  // Language detection disabled - always return null
+  return null;
+
+  /* Original implementation (disabled because of accuracy issues)
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
     return 'unknown';
   }
@@ -93,6 +97,7 @@ export function detectLanguage(text) {
     console.error('Error detecting language:', error.message);
     return 'unknown';
   }
+  */
 }
 
 /**
