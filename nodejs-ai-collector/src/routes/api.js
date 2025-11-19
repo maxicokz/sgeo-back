@@ -234,6 +234,36 @@ router.delete('/responses/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/responses/delete-multiple
+ * Delete multiple responses by IDs
+ */
+router.post('/responses/delete-multiple', async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'IDs array is required',
+      });
+    }
+
+    await supabaseService.deleteMultipleResponses(ids);
+
+    res.json({
+      success: true,
+      message: `${ids.length} response(s) deleted successfully`,
+      count: ids.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * DELETE /api/responses
  * Delete all responses
  */

@@ -6,6 +6,7 @@ let availableModels = [];
 let selectedModels = [];
 let isCollecting = false;
 let isBatchMode = false;
+let selectedResponses = new Set();
 
 // DOM Elements
 const singleModeBtn = document.getElementById('singleModeBtn');
@@ -20,7 +21,10 @@ const collectBtn = document.getElementById('collectBtn');
 const clearBtn = document.getElementById('clearBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const clearResultsBtn = document.getElementById('clearResultsBtn');
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+const selectedCount = document.getElementById('selectedCount');
 const resultsBody = document.getElementById('resultsBody');
 const progressSection = document.getElementById('progressSection');
 const progressFill = document.getElementById('progressFill');
@@ -119,6 +123,10 @@ function setupEventListeners() {
 
     savedPromptsList.addEventListener('change', loadPromptSet);
     deletePromptSetBtn.addEventListener('click', deletePromptSet);
+
+    // Selective deletion
+    selectAllCheckbox.addEventListener('change', handleSelectAll);
+    deleteSelectedBtn.addEventListener('click', deleteSelected);
 }
 
 // Switch mode
@@ -358,10 +366,15 @@ async function loadResponses() {
 
 // Render responses
 function renderResponses(responses) {
+    // Clear selected items and reset checkboxes
+    selectedResponses.clear();
+    updateDeleteButton();
+    selectAllCheckbox.checked = false;
+
     if (responses.length === 0) {
         resultsBody.innerHTML = `
             <tr>
-                <td colspan="6" class="no-data">Нет данных</td>
+                <td colspan="7" class="no-data">Нет данных</td>
             </tr>
         `;
         return;
@@ -369,6 +382,7 @@ function renderResponses(responses) {
 
     resultsBody.innerHTML = responses.map(r => `
         <tr>
+            <td><input type="checkbox" class="row-checkbox" data-id="${r.id}"></td>
             <td>${formatDate(r.createdAt)}</td>
             <td><span class="model-badge">${r.model}</span></td>
             <td class="truncate" title="${escapeHtml(r.prompt)}">${escapeHtml(r.prompt)}</td>
@@ -379,6 +393,11 @@ function renderResponses(responses) {
             </td>
         </tr>
     `).join('');
+
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', handleCheckboxChange);
+    });
 }
 
 // View details
@@ -484,6 +503,98 @@ async function clearAllResults() {
 
         if (data.success) {
             showToast('Все результаты удалены', 'success');
+            await loadResponses();
+            await loadStatistics();
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Ошибка при удалении: ' + error.message, 'error');
+    }
+}
+
+// Handle checkbox change
+function handleCheckboxChange(e) {
+    const id = e.target.dataset.id;
+    if (e.target.checked) {
+        selectedResponses.add(id);
+    } else {
+        selectedResponses.delete(id);
+    }
+    updateDeleteButton();
+    updateSelectAllCheckbox();
+}
+
+// Handle select all
+function handleSelectAll(e) {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        const id = cb.dataset.id;
+        if (e.target.checked) {
+            selectedResponses.add(id);
+        } else {
+            selectedResponses.delete(id);
+        }
+    });
+    updateDeleteButton();
+}
+
+// Update delete button visibility
+function updateDeleteButton() {
+    selectedCount.textContent = selectedResponses.size;
+    if (selectedResponses.size > 0) {
+        deleteSelectedBtn.classList.remove('hidden');
+    } else {
+        deleteSelectedBtn.classList.add('hidden');
+    }
+}
+
+// Update select all checkbox state
+function updateSelectAllCheckbox() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    if (checkboxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        return;
+    }
+
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+    if (checkedCount === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedCount === checkboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+// Delete selected responses
+async function deleteSelected() {
+    if (selectedResponses.size === 0) return;
+
+    if (!confirm(`Вы уверены, что хотите удалить ${selectedResponses.size} выбранных записей?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/responses/delete-multiple`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids: Array.from(selectedResponses) }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(`Удалено ${data.count} записей`, 'success');
+            selectedResponses.clear();
             await loadResponses();
             await loadStatistics();
         } else {

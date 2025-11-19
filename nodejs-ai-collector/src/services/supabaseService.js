@@ -156,6 +156,25 @@ class SupabaseService {
   }
 
   /**
+   * Delete multiple responses by IDs
+   * @param {Array<string>} ids - Array of response IDs
+   * @returns {Promise<void>}
+   */
+  async deleteMultipleResponses(ids) {
+    try {
+      const { error } = await this.client
+        .from('ai_responses')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting multiple responses:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete all responses
    * @returns {Promise<void>}
    */
