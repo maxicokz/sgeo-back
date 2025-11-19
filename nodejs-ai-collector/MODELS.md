@@ -39,16 +39,15 @@ MODEL_PERPLEXITY=perplexity/sonar-pro-search
 ### Google Gemini
 
 ```env
-MODEL_GEMINI=google/gemini-pro
+MODEL_GEMINI=google/gemini-2.5-flash
 ```
 
 **Доступные варианты:**
-- `google/gemini-pro` - Gemini Pro (рекомендуется)
-- `google/gemini-flash-1.5` - Gemini Flash 1.5 (быстрее)
-- `google/gemini-pro-1.5` - Gemini Pro 1.5
-- `google/gemini-3-pro-preview` - Gemini 3 Preview (новейшая версия)
+- `google/gemini-2.5-flash` - Gemini 2.5 Flash (рекомендуется - быстро и дешево)
+- `google/gemini-2.5-pro` - Gemini 2.5 Pro (более мощная версия)
+- `google/gemini-3-pro-preview` - Gemini 3 Pro Preview (новейшая версия, может быть дороже)
 
-**Примечание:** Модель `google/gemini-pro-1.5` может быть недоступна. Используйте `google/gemini-pro`.
+**Примечание:** Старые модели (`google/gemini-pro`, `google/gemini-pro-1.5`) больше не доступны. Используйте Gemini 2.5.
 
 ## 🔍 Как проверить доступные модели
 
@@ -122,7 +121,7 @@ MODEL_CHATGPT=openai/gpt-4-turbo
 MODEL_BING=openai/gpt-4-turbo
 MODEL_COPILOT=openai/gpt-4
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
-MODEL_GEMINI=google/gemini-pro
+MODEL_GEMINI=google/gemini-2.5-flash
 ```
 
 ### Бюджетная конфигурация
@@ -132,7 +131,7 @@ MODEL_CHATGPT=openai/gpt-3.5-turbo
 MODEL_BING=openai/gpt-3.5-turbo
 MODEL_COPILOT=openai/gpt-3.5-turbo
 MODEL_PERPLEXITY=perplexity/sonar
-MODEL_GEMINI=google/gemini-flash-1.5
+MODEL_GEMINI=google/gemini-2.5-flash
 ```
 
 ### Премиум конфигурация
@@ -142,7 +141,7 @@ MODEL_CHATGPT=openai/gpt-4-turbo
 MODEL_BING=openai/gpt-4-turbo
 MODEL_COPILOT=openai/gpt-4
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
-MODEL_GEMINI=google/gemini-3-pro-preview
+MODEL_GEMINI=google/gemini-2.5-pro
 ```
 
 ## 🔄 Обновление моделей
