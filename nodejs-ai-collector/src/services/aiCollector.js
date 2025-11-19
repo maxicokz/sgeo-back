@@ -74,25 +74,28 @@ class AICollector {
    * @returns {Promise<Array>} Array of collected responses
    */
   async collectMultiple(modelNames, prompt, options = {}) {
-    console.log(`\n🚀 Starting collection from ${modelNames.length} models...`);
+    console.log(`\n🚀 Starting collection from ${modelNames.length} models in parallel...`);
     console.log(`📝 Prompt: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
 
-    const results = [];
-    const errors = [];
+    // Execute all requests in parallel
+    const promises = modelNames.map((modelName) =>
+      this.collectSingle(modelName, prompt, options)
+        .then((result) => ({ status: 'fulfilled', value: result }))
+        .catch((error) => ({
+          status: 'rejected',
+          reason: { model: modelName, error: error.message },
+        }))
+    );
 
-    // Process each model
-    for (const modelName of modelNames) {
-      try {
-        const result = await this.collectSingle(modelName, prompt, options);
-        results.push(result);
-      } catch (error) {
-        console.error(`❌ Failed to collect from ${modelName}:`, error.message);
-        errors.push({
-          model: modelName,
-          error: error.message,
-        });
-      }
-    }
+    const settled = await Promise.all(promises);
+
+    const results = settled
+      .filter((result) => result.status === 'fulfilled')
+      .map((result) => result.value);
+
+    const errors = settled
+      .filter((result) => result.status === 'rejected')
+      .map((result) => result.reason);
 
     console.log(`\n📊 Collection complete: ${results.length} successful, ${errors.length} failed`);
 
