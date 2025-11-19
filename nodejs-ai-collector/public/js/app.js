@@ -36,7 +36,6 @@ const savePromptsModal = document.getElementById('savePromptsModal');
 const detailContent = document.getElementById('detailContent');
 const totalResponses = document.getElementById('totalResponses');
 const totalModels = document.getElementById('totalModels');
-const totalLanguages = document.getElementById('totalLanguages');
 
 // Saved prompts
 const savePromptsBtn = document.getElementById('savePromptsBtn');
@@ -374,7 +373,7 @@ function renderResponses(responses) {
     if (responses.length === 0) {
         resultsBody.innerHTML = `
             <tr>
-                <td colspan="7" class="no-data">Нет данных</td>
+                <td colspan="6" class="no-data">Нет данных</td>
             </tr>
         `;
         return;
@@ -387,7 +386,6 @@ function renderResponses(responses) {
             <td><span class="model-badge">${r.model}</span></td>
             <td class="truncate" title="${escapeHtml(r.prompt)}">${escapeHtml(r.prompt)}</td>
             <td class="truncate" title="${escapeHtml(r.response)}">${escapeHtml(r.response)}</td>
-            <td><span class="language-badge">${r.language || 'N/A'}</span></td>
             <td>
                 <button class="view-btn" onclick="viewDetails('${r.id}')">Просмотр</button>
             </td>
@@ -430,10 +428,6 @@ function showDetailModal(response) {
             <div class="detail-value">${escapeHtml(response.response)}</div>
         </div>
         <div class="detail-row">
-            <div class="detail-label">Язык</div>
-            <div class="detail-value"><span class="language-badge">${response.language || 'N/A'}</span></div>
-        </div>
-        <div class="detail-row">
             <div class="detail-label">Дата создания</div>
             <div class="detail-value">${formatDate(response.createdAt)}</div>
         </div>
@@ -463,7 +457,6 @@ async function loadStatistics() {
             const stats = data.statistics;
             totalResponses.textContent = stats.total || 0;
             totalModels.textContent = Object.keys(stats.byModel || {}).length;
-            totalLanguages.textContent = Object.keys(stats.byLanguage || {}).length;
         }
     } catch (error) {
         console.error('Error loading statistics:', error);
