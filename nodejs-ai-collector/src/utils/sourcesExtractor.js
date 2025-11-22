@@ -13,14 +13,45 @@ export function extractSources(metadata = {}, responseText = '') {
   const seenUrls = new Set();
 
   console.log('🔍 [sourcesExtractor] Starting extraction...');
-  console.log('🔍 [sourcesExtractor] Metadata:', JSON.stringify(metadata, null, 2));
   console.log('🔍 [sourcesExtractor] Response text length:', responseText?.length || 0);
 
-  // 1. Extract from metadata (OpenRouter may provide citations)
+  // 1. Extract from Perplexity annotations (preferred - has titles)
+  if (metadata.annotations && Array.isArray(metadata.annotations)) {
+    console.log('🔍 [sourcesExtractor] Found metadata.annotations:', metadata.annotations.length);
+    metadata.annotations.forEach(annotation => {
+      if (annotation.type === 'url_citation' && annotation.url_citation) {
+        const url = annotation.url_citation.url;
+        const title = annotation.url_citation.title || url;
+
+        if (url && !seenUrls.has(url)) {
+          sources.push({
+            type: 'citation',
+            url: url,
+            title: title,
+            source: 'perplexity',
+          });
+          seenUrls.add(url);
+        }
+      }
+    });
+  }
+
+  // 2. Extract from metadata.citations (Perplexity simple format - array of URLs)
   if (metadata.citations && Array.isArray(metadata.citations)) {
     console.log('🔍 [sourcesExtractor] Found metadata.citations:', metadata.citations.length);
     metadata.citations.forEach(citation => {
-      if (citation.url && !seenUrls.has(citation.url)) {
+      // If citation is a string (URL)
+      if (typeof citation === 'string' && !seenUrls.has(citation)) {
+        sources.push({
+          type: 'citation',
+          url: citation,
+          title: citation,
+          source: 'metadata',
+        });
+        seenUrls.add(citation);
+      }
+      // If citation is an object
+      else if (citation && citation.url && !seenUrls.has(citation.url)) {
         sources.push({
           type: 'citation',
           url: citation.url,
@@ -32,7 +63,7 @@ export function extractSources(metadata = {}, responseText = '') {
     });
   }
 
-  // 2. Extract from metadata.sources (alternative format)
+  // 3. Extract from metadata.sources (alternative format)
   if (metadata.sources && Array.isArray(metadata.sources)) {
     console.log('🔍 [sourcesExtractor] Found metadata.sources:', metadata.sources.length);
     metadata.sources.forEach(source => {
@@ -49,7 +80,7 @@ export function extractSources(metadata = {}, responseText = '') {
     });
   }
 
-  // 3. Extract markdown links FIRST [text](url) - do this before plain URLs
+  // 4. Extract markdown links [text](url) - do this before plain URLs
   if (responseText) {
     const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
     const matches = [...responseText.matchAll(markdownLinkRegex)];
@@ -72,7 +103,7 @@ export function extractSources(metadata = {}, responseText = '') {
     }
   }
 
-  // 4. Extract plain URLs from response text using regex (skip if already found in markdown)
+  // 5. Extract plain URLs from response text using regex (skip if already found in markdown)
   if (responseText) {
     const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
     const matches = [...responseText.matchAll(urlRegex)];

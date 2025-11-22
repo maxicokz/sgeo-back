@@ -44,10 +44,6 @@ class OpenRouterService {
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
-      // Log full response to see if there are citations/sources
-      console.log('🔍 [openrouterService] Full response.data:', JSON.stringify(response.data, null, 2));
-      console.log('🔍 [openrouterService] choices[0]:', JSON.stringify(response.data.choices[0], null, 2));
-
       return {
         success: true,
         content: response.data.choices[0].message.content,
@@ -57,11 +53,10 @@ class OpenRouterService {
           usage: response.data.usage,
           responseTime,
           finishReason: response.data.choices[0].finish_reason,
-          // Include all extra fields from response.data that might contain citations
-          citations: response.data.citations || response.data.choices[0].citations,
-          sources: response.data.sources || response.data.choices[0].sources,
-          // Include full response.data for debugging
-          rawResponse: response.data,
+          // Perplexity citations (array of URLs)
+          citations: response.data.citations,
+          // Perplexity annotations (detailed info with titles)
+          annotations: response.data.choices[0].message.annotations,
         },
       };
     } catch (error) {
