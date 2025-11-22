@@ -373,24 +373,32 @@ function renderResponses(responses) {
     if (responses.length === 0) {
         resultsBody.innerHTML = `
             <tr>
-                <td colspan="6" class="no-data">Нет данных</td>
+                <td colspan="7" class="no-data">Нет данных</td>
             </tr>
         `;
         return;
     }
 
-    resultsBody.innerHTML = responses.map(r => `
+    resultsBody.innerHTML = responses.map(r => {
+        const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
+        const sourcesDisplay = sourcesCount > 0
+            ? `<span class="sources-badge" title="${sourcesCount} источников">🔗 ${sourcesCount}</span>`
+            : '<span class="no-sources">—</span>';
+
+        return `
         <tr>
             <td><input type="checkbox" class="row-checkbox" data-id="${r.id}"></td>
             <td>${formatDate(r.createdAt)}</td>
             <td><span class="model-badge">${r.model}</span></td>
             <td class="truncate" title="${escapeHtml(r.prompt)}">${escapeHtml(r.prompt)}</td>
             <td class="truncate" title="${escapeHtml(r.response)}">${escapeHtml(r.response)}</td>
+            <td class="text-center">${sourcesDisplay}</td>
             <td>
                 <button class="view-btn" onclick="viewDetails('${r.id}')">Просмотр</button>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 
     // Add event listeners to checkboxes
     document.querySelectorAll('.row-checkbox').forEach(cb => {
@@ -414,6 +422,25 @@ async function viewDetails(id) {
 
 // Show detail modal
 function showDetailModal(response) {
+    // Format sources for display
+    let sourcesHtml = '<p class="no-data">Нет источников</p>';
+    if (response.sources && Array.isArray(response.sources) && response.sources.length > 0) {
+        sourcesHtml = '<div class="sources-list">' +
+            response.sources.map((source, index) => {
+                const domain = extractDomain(source.url);
+                return `
+                    <div class="source-item">
+                        <span class="source-number">[${index + 1}]</span>
+                        <a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer" class="source-link">
+                            ${escapeHtml(source.title || source.url)}
+                        </a>
+                        <span class="source-domain">(${escapeHtml(domain)})</span>
+                    </div>
+                `;
+            }).join('') +
+            '</div>';
+    }
+
     detailContent.innerHTML = `
         <div class="detail-row">
             <div class="detail-label">Модель</div>
@@ -425,7 +452,11 @@ function showDetailModal(response) {
         </div>
         <div class="detail-row">
             <div class="detail-label">Ответ</div>
-            <div class="detail-value">${escapeHtml(response.response)}</div>
+            <div class="detail-value response-text">${escapeHtml(response.response)}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Источники</div>
+            <div class="detail-value">${sourcesHtml}</div>
         </div>
         <div class="detail-row">
             <div class="detail-label">Дата создания</div>
@@ -440,6 +471,16 @@ function showDetailModal(response) {
     `;
 
     detailModal.classList.add('active');
+}
+
+// Helper function to extract domain from URL
+function extractDomain(url) {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname.replace('www.', '');
+    } catch (error) {
+        return 'unknown';
+    }
 }
 
 // Close modal

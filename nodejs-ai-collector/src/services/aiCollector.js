@@ -1,6 +1,7 @@
 import openrouterService from './openrouterService.js';
 import supabaseService from './supabaseService.js';
 import { detectLanguage } from '../utils/languageDetector.js';
+import { extractSources } from '../utils/sourcesExtractor.js';
 import { config } from '../config/config.js';
 
 class AICollector {
@@ -39,12 +40,19 @@ class AICollector {
 
     console.log(`✅ Response received from ${modelName} (${endTime - startTime}ms)`);
 
+    // Extract sources from response and metadata
+    const sources = extractSources(result.metadata, result.content);
+    if (sources.length > 0) {
+      console.log(`🔗 Found ${sources.length} source(s)`);
+    }
+
     // Prepare data for storage
     const responseData = {
       prompt,
       modelName: modelName.toLowerCase(),
       response: result.content,
       language,
+      sources,
       metadata: {
         ...result.metadata,
         modelId,

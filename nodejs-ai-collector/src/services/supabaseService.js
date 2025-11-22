@@ -13,6 +13,7 @@ class SupabaseService {
    * @param {string} data.modelName - Name of the AI model
    * @param {string} data.response - The AI response
    * @param {string} data.language - Detected language
+   * @param {Array} data.sources - Array of sources/citations
    * @param {Object} data.metadata - Additional metadata
    * @returns {Promise<Object>} Saved record
    */
@@ -26,6 +27,7 @@ class SupabaseService {
             model_name: data.modelName,
             response: data.response,
             language: data.language,
+            sources: data.sources || [],
             metadata: data.metadata || {},
           },
         ])

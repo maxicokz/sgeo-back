@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS ai_responses (
     model_name VARCHAR(100) NOT NULL,
     response TEXT NOT NULL,
     language VARCHAR(10),
+    sources JSONB DEFAULT '[]'::jsonb,
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -18,12 +19,16 @@ CREATE INDEX IF NOT EXISTS idx_ai_responses_language ON ai_responses(language);
 -- Create index for metadata search
 CREATE INDEX IF NOT EXISTS idx_ai_responses_metadata ON ai_responses USING GIN (metadata);
 
+-- Create index for sources search
+CREATE INDEX IF NOT EXISTS idx_ai_responses_sources ON ai_responses USING GIN (sources);
+
 -- Add comment to table
 COMMENT ON TABLE ai_responses IS 'Stores AI model responses from various providers via OpenRouter';
 COMMENT ON COLUMN ai_responses.prompt IS 'The input prompt sent to the AI model';
 COMMENT ON COLUMN ai_responses.model_name IS 'Name of the AI model used (e.g., chatgpt, gemini, perplexity)';
 COMMENT ON COLUMN ai_responses.response IS 'The AI model response text';
 COMMENT ON COLUMN ai_responses.language IS 'Detected language of the prompt (ISO 639-1 code)';
+COMMENT ON COLUMN ai_responses.sources IS 'Array of sources/citations provided by the AI model';
 COMMENT ON COLUMN ai_responses.metadata IS 'Additional metadata (tokens used, response time, etc.)';
 
 -- Create function to automatically update updated_at timestamp
