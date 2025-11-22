@@ -333,4 +333,165 @@ router.get('/export/csv', async (req, res) => {
   }
 });
 
+// ============================================
+// Prompt Sets Routes
+// ============================================
+
+/**
+ * GET /api/prompt-sets
+ * Get all saved prompt sets
+ */
+router.get('/prompt-sets', async (req, res) => {
+  try {
+    const promptSets = await supabaseService.getPromptSets();
+    res.json({
+      success: true,
+      promptSets: promptSets,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/prompt-sets/:id
+ * Get a specific prompt set by ID
+ */
+router.get('/prompt-sets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const promptSet = await supabaseService.getPromptSetById(id);
+    res.json({
+      success: true,
+      promptSet: promptSet,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/prompt-sets
+ * Create a new prompt set
+ * Body: { name: string, prompts: string[] }
+ */
+router.post('/prompt-sets', async (req, res) => {
+  try {
+    const { name, prompts } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Prompt set name is required',
+      });
+    }
+
+    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'At least one prompt is required',
+      });
+    }
+
+    const promptSet = await supabaseService.savePromptSet({
+      name: name.trim(),
+      prompts: prompts.filter(p => p && p.trim()).map(p => p.trim()),
+    });
+
+    res.json({
+      success: true,
+      promptSet: promptSet,
+    });
+  } catch (error) {
+    // Handle unique constraint violation
+    if (error.message.includes('duplicate key') || error.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        error: 'A prompt set with this name already exists',
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * PUT /api/prompt-sets/:id
+ * Update a prompt set
+ * Body: { name?: string, prompts?: string[] }
+ */
+router.put('/prompt-sets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, prompts } = req.body;
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (prompts !== undefined) {
+      updateData.prompts = prompts.filter(p => p && p.trim()).map(p => p.trim());
+    }
+
+    const promptSet = await supabaseService.updatePromptSet(id, updateData);
+
+    res.json({
+      success: true,
+      promptSet: promptSet,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/prompt-sets/:id
+ * Delete a prompt set by ID
+ */
+router.delete('/prompt-sets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await supabaseService.deletePromptSet(id);
+    res.json({
+      success: true,
+      message: 'Prompt set deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/prompt-sets/by-name/:name
+ * Delete a prompt set by name
+ */
+router.delete('/prompt-sets/by-name/:name', async (req, res) => {
+  try {
+    const { name } = req.params;
+    await supabaseService.deletePromptSetByName(decodeURIComponent(name));
+    res.json({
+      success: true,
+      message: 'Prompt set deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 export default router;

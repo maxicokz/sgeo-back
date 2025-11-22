@@ -598,20 +598,30 @@ async function deleteSelected() {
     }
 }
 
-// Saved prompts management
-function loadSavedPromptsList() {
-    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
-    savedPromptsList.innerHTML = '<option value="">-- Выберите набор --</option>';
+// Saved prompts management (using API instead of localStorage)
+async function loadSavedPromptsList() {
+    try {
+        const response = await fetch(`${API_BASE}/prompt-sets`);
+        const data = await response.json();
 
-    Object.keys(saved).forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        savedPromptsList.appendChild(option);
-    });
+        savedPromptsList.innerHTML = '<option value="">-- Выберите набор --</option>';
+
+        if (data.success && data.promptSets) {
+            data.promptSets.forEach(set => {
+                const option = document.createElement('option');
+                option.value = set.id;
+                option.textContent = set.name;
+                option.dataset.prompts = JSON.stringify(set.prompts);
+                savedPromptsList.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading prompt sets:', error);
+        showToast('Ошибка загрузки наборов промптов', 'error');
+    }
 }
 
-function savePromptSet() {
+async function savePromptSet() {
     const name = promptSetName.value.trim();
     const promptsText = batchPromptsInput.value.trim();
 
@@ -626,46 +636,78 @@ function savePromptSet() {
     }
 
     const prompts = promptsText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
-    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
-    saved[name] = prompts;
-    localStorage.setItem('savedPrompts', JSON.stringify(saved));
 
-    showToast(`Набор "${name}" сохранен`, 'success');
-    loadSavedPromptsList();
-    savePromptsModal.classList.remove('active');
+    try {
+        const response = await fetch(`${API_BASE}/prompt-sets`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, prompts }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(`Набор "${name}" сохранен`, 'success');
+            await loadSavedPromptsList();
+            savePromptsModal.classList.remove('active');
+            promptSetName.value = '';
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Ошибка: ' + error.message, 'error');
+    }
 }
 
 function loadPromptSet() {
-    const name = savedPromptsList.value;
-    if (!name) return;
+    const selectedOption = savedPromptsList.options[savedPromptsList.selectedIndex];
+    if (!selectedOption || !selectedOption.value) return;
 
-    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
-    const prompts = saved[name];
-
-    if (prompts) {
-        batchPromptsInput.value = prompts.join('\n');
-        showToast(`Набор "${name}" загружен`, 'success');
+    try {
+        const prompts = JSON.parse(selectedOption.dataset.prompts || '[]');
+        if (prompts && prompts.length > 0) {
+            batchPromptsInput.value = prompts.join('\n');
+            showToast(`Набор "${selectedOption.textContent}" загружен`, 'success');
+        }
+    } catch (error) {
+        console.error('Error loading prompt set:', error);
+        showToast('Ошибка загрузки набора', 'error');
     }
 }
 
-function deletePromptSet() {
-    const name = savedPromptsList.value;
-    if (!name) {
+async function deletePromptSet() {
+    const selectedOption = savedPromptsList.options[savedPromptsList.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
         showToast('Выберите набор для удаления', 'warning');
         return;
     }
+
+    const id = selectedOption.value;
+    const name = selectedOption.textContent;
 
     if (!confirm(`Удалить набор "${name}"?`)) {
         return;
     }
 
-    const saved = JSON.parse(localStorage.getItem('savedPrompts') || '{}');
-    delete saved[name];
-    localStorage.setItem('savedPrompts', JSON.stringify(saved));
+    try {
+        const response = await fetch(`${API_BASE}/prompt-sets/${id}`, {
+            method: 'DELETE',
+        });
 
-    showToast(`Набор "${name}" удален`, 'success');
-    loadSavedPromptsList();
-    savedPromptsList.value = '';
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(`Набор "${name}" удален`, 'success');
+            await loadSavedPromptsList();
+            savedPromptsList.value = '';
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Ошибка при удалении: ' + error.message, 'error');
+    }
 }
 
 // Show progress

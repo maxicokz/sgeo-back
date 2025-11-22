@@ -49,3 +49,36 @@ CREATE POLICY "Enable all operations for authenticated users" ON ai_responses
     FOR ALL
     USING (true)
     WITH CHECK (true);
+
+-- Create table for storing saved prompt sets
+CREATE TABLE IF NOT EXISTS prompt_sets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    prompts TEXT[] NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for prompt sets
+CREATE INDEX IF NOT EXISTS idx_prompt_sets_name ON prompt_sets(name);
+CREATE INDEX IF NOT EXISTS idx_prompt_sets_created_at ON prompt_sets(created_at DESC);
+
+-- Add comments to prompt_sets table
+COMMENT ON TABLE prompt_sets IS 'Stores saved prompt sets for reuse across browsers';
+COMMENT ON COLUMN prompt_sets.name IS 'Unique name of the prompt set';
+COMMENT ON COLUMN prompt_sets.prompts IS 'Array of prompts in this set';
+
+-- Create trigger for prompt_sets updated_at
+CREATE TRIGGER update_prompt_sets_updated_at
+    BEFORE UPDATE ON prompt_sets
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS) for prompt_sets
+ALTER TABLE prompt_sets ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow all operations for prompt_sets
+CREATE POLICY "Enable all operations for prompt sets" ON prompt_sets
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);

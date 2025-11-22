@@ -191,6 +191,149 @@ class SupabaseService {
       throw error;
     }
   }
+
+  // ============================================
+  // Prompt Sets Methods
+  // ============================================
+
+  /**
+   * Get all prompt sets
+   * @returns {Promise<Array>} Array of prompt sets
+   */
+  async getPromptSets() {
+    try {
+      const { data, error } = await this.client
+        .from('prompt_sets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching prompt sets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get prompt set by ID
+   * @param {string} id - Prompt set ID
+   * @returns {Promise<Object>} Prompt set record
+   */
+  async getPromptSetById(id) {
+    try {
+      const { data, error } = await this.client
+        .from('prompt_sets')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching prompt set by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save a prompt set
+   * @param {Object} data - Prompt set data
+   * @param {string} data.name - Name of the prompt set
+   * @param {Array<string>} data.prompts - Array of prompts
+   * @returns {Promise<Object>} Saved prompt set
+   */
+  async savePromptSet(data) {
+    try {
+      const { data: result, error } = await this.client
+        .from('prompt_sets')
+        .insert([
+          {
+            name: data.name,
+            prompts: data.prompts,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return result;
+    } catch (error) {
+      console.error('Error saving prompt set:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a prompt set
+   * @param {string} id - Prompt set ID
+   * @param {Object} data - Updated data
+   * @param {string} data.name - New name
+   * @param {Array<string>} data.prompts - New prompts array
+   * @returns {Promise<Object>} Updated prompt set
+   */
+  async updatePromptSet(id, data) {
+    try {
+      const updateData = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.prompts !== undefined) updateData.prompts = data.prompts;
+
+      const { data: result, error } = await this.client
+        .from('prompt_sets')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return result;
+    } catch (error) {
+      console.error('Error updating prompt set:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a prompt set by ID
+   * @param {string} id - Prompt set ID
+   * @returns {Promise<void>}
+   */
+  async deletePromptSet(id) {
+    try {
+      const { error } = await this.client
+        .from('prompt_sets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting prompt set:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a prompt set by name
+   * @param {string} name - Prompt set name
+   * @returns {Promise<void>}
+   */
+  async deletePromptSetByName(name) {
+    try {
+      const { error } = await this.client
+        .from('prompt_sets')
+        .delete()
+        .eq('name', name);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting prompt set by name:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SupabaseService();
