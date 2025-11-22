@@ -5,7 +5,7 @@ Multi-model AI response collector using OpenRouter with Supabase storage.
 ## 🌟 Features
 
 - ✅ Collect responses from multiple AI models via unified API (OpenRouter)
-- ✅ Support for ChatGPT, Bing, Copilot, Perplexity, Gemini
+- ✅ Support for ChatGPT 5.1, DeepSeek, Copilot, Perplexity, Gemini
 - ✅ Automatic language detection for prompts
 - ✅ Data storage in Supabase (PostgreSQL)
 - ✅ Metadata collection (tokens, response time, etc.)
@@ -126,13 +126,13 @@ Table `ai_responses`:
 
 ## 🤖 Supported Models
 
-- **ChatGPT** - `openai/gpt-4-turbo-preview`
-- **Bing** - `openai/gpt-4-turbo` (via OpenRouter)
+- **ChatGPT 5.1** - `openai/gpt-5.1-chat` (latest version)
+- **DeepSeek V3** - `deepseek/deepseek-chat` (efficient and cost-effective)
 - **Copilot** - `openai/gpt-4`
-- **Perplexity** - `perplexity/llama-3.1-sonar-large-128k-online`
-- **Gemini** - `google/gemini-pro-1.5`
+- **Perplexity** - `perplexity/sonar-pro-search`
+- **Gemini** - `google/gemini-2.5-flash`
 
-You can configure models in the `.env` file.
+You can configure models in the `.env` file. See [MODELS.md](MODELS.md) for details.
 
 ## 🌍 Language Detection
 

@@ -12,11 +12,11 @@ export const config = {
     anonKey: process.env.SUPABASE_ANON_KEY,
   },
   models: {
-    chatgpt: process.env.MODEL_CHATGPT || 'openai/gpt-4-turbo-preview',
-    bing: process.env.MODEL_BING || 'openai/gpt-4-turbo',
+    chatgpt: process.env.MODEL_CHATGPT || 'openai/gpt-5.1-chat',
+    deepseek: process.env.MODEL_DEEPSEEK || 'deepseek/deepseek-chat',
     copilot: process.env.MODEL_COPILOT || 'openai/gpt-4',
-    perplexity: process.env.MODEL_PERPLEXITY || 'perplexity/llama-3.1-sonar-large-128k-online',
-    gemini: process.env.MODEL_GEMINI || 'google/gemini-pro-1.5',
+    perplexity: process.env.MODEL_PERPLEXITY || 'perplexity/sonar-pro-search',
+    gemini: process.env.MODEL_GEMINI || 'google/gemini-2.5-flash',
   },
   app: {
     name: process.env.APP_NAME || 'AI Responses Collector',

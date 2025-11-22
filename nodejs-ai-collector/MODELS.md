@@ -8,20 +8,35 @@
 
 ## ✅ Рекомендуемые модели (протестированы)
 
-### OpenAI (ChatGPT, Bing, Copilot)
+### OpenAI (ChatGPT, Copilot)
 
 ```env
-MODEL_CHATGPT=openai/gpt-4-turbo
-MODEL_BING=openai/gpt-4-turbo
+MODEL_CHATGPT=openai/gpt-5.1-chat
 MODEL_COPILOT=openai/gpt-4
 ```
 
 **Доступные варианты:**
-- `openai/gpt-4-turbo` - GPT-4 Turbo (рекомендуется)
+- `openai/gpt-5.1-chat` - GPT-5.1 Chat (рекомендуется - новейшая версия)
+- `openai/gpt-5-chat` - GPT-5 Chat
+- `openai/gpt-4-turbo` - GPT-4 Turbo
 - `openai/gpt-4` - GPT-4 базовый
 - `openai/gpt-3.5-turbo` - GPT-3.5 (дешевле)
-- `openai/gpt-4o` - GPT-4o (если доступен)
+- `openai/gpt-4o` - GPT-4o
 - `openai/gpt-4o-mini` - GPT-4o mini (быстрее и дешевле)
+
+### DeepSeek
+
+```env
+MODEL_DEEPSEEK=deepseek/deepseek-chat
+```
+
+**Доступные варианты:**
+- `deepseek/deepseek-chat` - DeepSeek V3 Chat (рекомендуется)
+- `deepseek/deepseek-chat-v3.1` - DeepSeek V3.1 (671B параметров, 37B активных)
+- `deepseek/deepseek-v3.2-exp` - DeepSeek V3.2 Experimental
+- `deepseek/deepseek-chat-v3-0324:free` - Бесплатная версия DeepSeek V3
+
+**Примечание:** DeepSeek V3.1 поддерживает режимы с рассуждениями (thinking mode) и без них.
 
 ### Perplexity
 
@@ -78,11 +93,14 @@ node check-models.js
 
 | Модель | Цена за 1M токенов (input/output) |
 |--------|-----------------------------------|
+| GPT-5.1 Chat | $15 / $60 |
 | GPT-4 Turbo | $10 / $30 |
 | GPT-3.5 Turbo | $0.50 / $1.50 |
 | GPT-4o mini | $0.15 / $0.60 |
-| Gemini Pro | $0.50 / $1.50 |
-| Perplexity Sonar | $1 / $1 |
+| DeepSeek V3 | $0.27 / $1.10 |
+| DeepSeek (free) | Бесплатно |
+| Gemini 2.5 Flash | $0.50 / $1.50 |
+| Perplexity Sonar Pro | $3 / $15 |
 
 **Примечание:** Цены могут меняться. Проверяйте актуальные на https://openrouter.ai/models
 
@@ -117,8 +135,8 @@ node check-models.js
 ### Конфигурация по умолчанию (баланс цена/качество)
 
 ```env
-MODEL_CHATGPT=openai/gpt-4-turbo
-MODEL_BING=openai/gpt-4-turbo
+MODEL_CHATGPT=openai/gpt-5.1-chat
+MODEL_DEEPSEEK=deepseek/deepseek-chat
 MODEL_COPILOT=openai/gpt-4
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
 MODEL_GEMINI=google/gemini-2.5-flash
@@ -128,7 +146,7 @@ MODEL_GEMINI=google/gemini-2.5-flash
 
 ```env
 MODEL_CHATGPT=openai/gpt-3.5-turbo
-MODEL_BING=openai/gpt-3.5-turbo
+MODEL_DEEPSEEK=deepseek/deepseek-chat-v3-0324:free
 MODEL_COPILOT=openai/gpt-3.5-turbo
 MODEL_PERPLEXITY=perplexity/sonar
 MODEL_GEMINI=google/gemini-2.5-flash
@@ -137,8 +155,8 @@ MODEL_GEMINI=google/gemini-2.5-flash
 ### Премиум конфигурация
 
 ```env
-MODEL_CHATGPT=openai/gpt-4-turbo
-MODEL_BING=openai/gpt-4-turbo
+MODEL_CHATGPT=openai/gpt-5.1-chat
+MODEL_DEEPSEEK=deepseek/deepseek-chat-v3.1
 MODEL_COPILOT=openai/gpt-4
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
 MODEL_GEMINI=google/gemini-2.5-pro

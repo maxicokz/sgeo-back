@@ -5,7 +5,7 @@
 ## 🌟 Возможности
 
 - ✅ Сбор ответов от множества AI моделей через единый API (OpenRouter)
-- ✅ Поддержка ChatGPT, Bing, Copilot, Perplexity, Gemini
+- ✅ Поддержка ChatGPT 5.1, DeepSeek, Copilot, Perplexity, Gemini
 - ✅ Автоматическое определение языка запроса
 - ✅ Сохранение данных в Supabase (PostgreSQL)
 - ✅ Сбор метаданных (токены, время ответа, и т.д.)
@@ -165,13 +165,13 @@ const stats = await supabaseService.getStatistics();
 
 ## 🤖 Поддерживаемые модели
 
-- **ChatGPT** - `openai/gpt-4-turbo-preview`
-- **Bing** - `openai/gpt-4-turbo` (через OpenRouter)
+- **ChatGPT 5.1** - `openai/gpt-5.1-chat` (новейшая версия)
+- **DeepSeek V3** - `deepseek/deepseek-chat` (эффективная и доступная модель)
 - **Copilot** - `openai/gpt-4`
-- **Perplexity** - `perplexity/llama-3.1-sonar-large-128k-online`
-- **Gemini** - `google/gemini-pro-1.5`
+- **Perplexity** - `perplexity/sonar-pro-search`
+- **Gemini** - `google/gemini-2.5-flash`
 
-Вы можете настроить модели в файле `.env`.
+Вы можете настроить модели в файле `.env`. Подробнее см. [MODELS.md](MODELS.md).
 
 ## 🌍 Определение языка
 

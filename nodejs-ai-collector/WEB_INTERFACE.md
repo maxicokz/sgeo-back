@@ -61,11 +61,11 @@ PORT=8080 npm run web
 - Чекбоксы для выбора AI моделей
 - Можно выбрать одну или несколько моделей одновременно
 - Доступные модели:
-  - **ChatGPT** - GPT-4 Turbo
-  - **Bing** - Bing Chat (GPT-4)
-  - **Copilot** - Microsoft Copilot
-  - **Perplexity** - Perplexity AI
-  - **Gemini** - Google Gemini Pro
+  - **ChatGPT** - GPT-5.1 Chat (новейшая версия)
+  - **DeepSeek** - DeepSeek V3 (эффективная и доступная)
+  - **Copilot** - Microsoft Copilot (GPT-4)
+  - **Perplexity** - Perplexity Sonar Pro
+  - **Gemini** - Google Gemini 2.5 Flash
 
 #### Кнопки действий
 - **🚀 Собрать ответы** - запускает сбор ответов от выбранных моделей
