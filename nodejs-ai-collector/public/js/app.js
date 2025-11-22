@@ -7,6 +7,8 @@ let selectedModels = [];
 let isCollecting = false;
 let isBatchMode = false;
 let selectedResponses = new Set();
+let currentPage = 1;
+let totalPages = 1;
 
 // DOM Elements
 const singleModeBtn = document.getElementById('singleModeBtn');
@@ -36,6 +38,11 @@ const savePromptsModal = document.getElementById('savePromptsModal');
 const detailContent = document.getElementById('detailContent');
 const totalResponses = document.getElementById('totalResponses');
 const totalModels = document.getElementById('totalModels');
+
+// Pagination
+const prevPageBtn = document.getElementById('prevPageBtn');
+const nextPageBtn = document.getElementById('nextPageBtn');
+const paginationInfo = document.getElementById('paginationInfo');
 
 // Saved prompts
 const savePromptsBtn = document.getElementById('savePromptsBtn');
@@ -92,10 +99,16 @@ function setupEventListeners() {
     clearResultsBtn.addEventListener('click', clearAllResults);
 
     // Model filter
-    modelFilter.addEventListener('change', loadResponses);
+    modelFilter.addEventListener('change', () => {
+        currentPage = 1; // Reset to first page when filter changes
+        loadResponses();
+    });
 
     // Limit input
-    limitInput.addEventListener('change', loadResponses);
+    limitInput.addEventListener('change', () => {
+        currentPage = 1; // Reset to first page when limit changes
+        loadResponses();
+    });
 
     // Modal close
     document.querySelectorAll('.modal-close').forEach(closeBtn => {
@@ -126,6 +139,10 @@ function setupEventListeners() {
     // Selective deletion
     selectAllCheckbox.addEventListener('change', handleSelectAll);
     deleteSelectedBtn.addEventListener('click', deleteSelected);
+
+    // Pagination
+    prevPageBtn.addEventListener('click', goToPrevPage);
+    nextPageBtn.addEventListener('click', goToNextPage);
 }
 
 // Switch mode
@@ -347,7 +364,7 @@ async function loadResponses() {
         const limit = limitInput.value || 20;
         const model = modelFilter.value;
 
-        let url = `${API_BASE}/responses?limit=${limit}`;
+        let url = `${API_BASE}/responses?limit=${limit}&page=${currentPage}`;
         if (model) {
             url += `&modelName=${model}`;
         }
@@ -357,6 +374,12 @@ async function loadResponses() {
 
         if (data.success) {
             renderResponses(data.responses);
+
+            // Update pagination
+            if (data.pagination) {
+                totalPages = data.pagination.totalPages;
+                updatePagination(data.pagination);
+            }
         }
     } catch (error) {
         showToast('Ошибка загрузки ответов: ' + error.message, 'error');
@@ -537,6 +560,7 @@ async function clearAllResults() {
 
         if (data.success) {
             showToast('Все результаты удалены', 'success');
+            currentPage = 1; // Reset to first page
             await loadResponses();
             await loadStatistics();
         } else {
@@ -629,6 +653,7 @@ async function deleteSelected() {
         if (data.success) {
             showToast(`Удалено ${data.count} записей`, 'success');
             selectedResponses.clear();
+            currentPage = 1; // Reset to first page
             await loadResponses();
             await loadStatistics();
         } else {
@@ -748,6 +773,28 @@ async function deletePromptSet() {
         }
     } catch (error) {
         showToast('Ошибка при удалении: ' + error.message, 'error');
+    }
+}
+
+// Pagination functions
+function updatePagination(pagination) {
+    paginationInfo.textContent = `Страница ${pagination.page} из ${pagination.totalPages} (всего: ${pagination.total})`;
+
+    prevPageBtn.disabled = !pagination.hasPrev;
+    nextPageBtn.disabled = !pagination.hasNext;
+}
+
+function goToPrevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadResponses();
+    }
+}
+
+function goToNextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadResponses();
     }
 }
 

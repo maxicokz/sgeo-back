@@ -47,20 +47,21 @@ class SupabaseService {
    * Get all responses
    * @param {Object} options - Query options
    * @param {number} options.limit - Number of records to fetch
+   * @param {number} options.offset - Offset for pagination
    * @param {string} options.modelName - Filter by model name
    * @param {string} options.language - Filter by language
-   * @returns {Promise<Array>} Array of responses
+   * @param {boolean} options.count - Whether to return total count
+   * @returns {Promise<Object|Array>} Array of responses or object with data and count
    */
   async getResponses(options = {}) {
     try {
+      const limit = options.limit || 20;
+      const offset = options.offset || 0;
+
       let query = this.client
         .from('ai_responses')
-        .select('*')
+        .select('*', { count: options.count ? 'exact' : undefined })
         .order('created_at', { ascending: false });
-
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
 
       if (options.modelName) {
         query = query.eq('model_name', options.modelName);
@@ -70,9 +71,17 @@ class SupabaseService {
         query = query.eq('language', options.language);
       }
 
-      const { data, error } = await query;
+      // Use range for pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
+
+      // If count is requested, return both data and count
+      if (options.count) {
+        return { data, count };
+      }
 
       return data;
     } catch (error) {

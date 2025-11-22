@@ -84,15 +84,21 @@ router.post('/collect', async (req, res) => {
 
 /**
  * GET /api/responses
- * Get collected responses
- * Query params: limit, modelName, language
+ * Get collected responses with pagination
+ * Query params: limit, page, offset, modelName, language
  */
 router.get('/responses', async (req, res) => {
   try {
-    const { limit, modelName, language } = req.query;
+    const { limit, page, offset, modelName, language } = req.query;
+
+    const perPage = limit ? parseInt(limit) : 20;
+    const currentPage = page ? parseInt(page) : 1;
+    const calculatedOffset = offset ? parseInt(offset) : (currentPage - 1) * perPage;
 
     const options = {
-      limit: limit ? parseInt(limit) : 50,
+      limit: perPage,
+      offset: calculatedOffset,
+      count: true, // Request total count
     };
 
     if (modelName) {
@@ -103,20 +109,30 @@ router.get('/responses', async (req, res) => {
       options.language = language;
     }
 
-    const responses = await supabaseService.getResponses(options);
+    const result = await supabaseService.getResponses(options);
+    const responses = result.data;
+    const total = result.count;
 
     res.json({
       success: true,
-      count: responses.length,
       responses: responses.map(r => ({
         id: r.id,
         prompt: r.prompt,
         model: r.model_name,
         response: r.response,
         language: r.language,
+        sources: r.sources,
         metadata: r.metadata,
         createdAt: r.created_at,
       })),
+      pagination: {
+        total: total,
+        page: currentPage,
+        perPage: perPage,
+        totalPages: Math.ceil(total / perPage),
+        hasNext: (currentPage * perPage) < total,
+        hasPrev: currentPage > 1,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -151,6 +167,7 @@ router.get('/responses/:id', async (req, res) => {
         model: response.model_name,
         response: response.response,
         language: response.language,
+        sources: response.sources,
         metadata: response.metadata,
         createdAt: response.created_at,
       },
@@ -305,26 +322,42 @@ router.get('/export/csv', async (req, res) => {
 
     const responses = await supabaseService.getResponses(options);
 
-    // Generate CSV
-    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Tokens Used'];
-    const rows = responses.map(r => [
-      r.id,
-      r.created_at,
-      r.model_name,
-      r.language || 'N/A',
-      `"${(r.prompt || '').replace(/"/g, '""')}"`,
-      `"${(r.response || '').replace(/"/g, '""')}"`,
-      r.metadata?.usage?.total_tokens || 'N/A',
-    ]);
+    // Helper function to properly escape CSV fields
+    const escapeCsvField = (field) => {
+      if (field === null || field === undefined) {
+        return '';
+      }
+      const str = String(field);
+      // Replace quotes with double quotes and wrap in quotes if contains special chars
+      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
 
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+    // Generate CSV with proper formatting
+    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Tokens Used'];
+    const rows = responses.map(r => {
+      const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
+      return [
+        escapeCsvField(r.id),
+        escapeCsvField(r.created_at),
+        escapeCsvField(r.model_name),
+        escapeCsvField(r.language || 'N/A'),
+        escapeCsvField(r.prompt || ''),
+        escapeCsvField(r.response || ''),
+        escapeCsvField(sourcesCount),
+        escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
+      ].join(',');
+    });
 
-    res.setHeader('Content-Type', 'text/csv');
+    // Use \r\n for line breaks (RFC 4180 standard)
+    const csv = [headers.join(','), ...rows].join('\r\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="ai-responses-${Date.now()}.csv"`);
-    res.send(csv);
+    // Add BOM for proper UTF-8 handling in Excel
+    res.send('\uFEFF' + csv);
   } catch (error) {
     res.status(500).json({
       success: false,
