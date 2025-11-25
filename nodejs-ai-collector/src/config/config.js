@@ -14,7 +14,7 @@ export const config = {
   models: {
     chatgpt: process.env.MODEL_CHATGPT || 'openai/gpt-5.1-chat',
     deepseek: process.env.MODEL_DEEPSEEK || 'deepseek/deepseek-chat',
-    copilot: process.env.MODEL_COPILOT || 'openai/gpt-4',
+    grok: process.env.MODEL_GROK || 'x-ai/grok-4-fast',
     perplexity: process.env.MODEL_PERPLEXITY || 'perplexity/sonar-pro-search',
     gemini: process.env.MODEL_GEMINI || 'google/gemini-2.5-flash',
   },

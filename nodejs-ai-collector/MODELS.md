@@ -8,11 +8,10 @@
 
 ## ✅ Рекомендуемые модели (протестированы)
 
-### OpenAI (ChatGPT, Copilot)
+### OpenAI (ChatGPT)
 
 ```env
 MODEL_CHATGPT=openai/gpt-5.1-chat
-MODEL_COPILOT=openai/gpt-4
 ```
 
 **Доступные варианты:**
@@ -23,6 +22,17 @@ MODEL_COPILOT=openai/gpt-4
 - `openai/gpt-3.5-turbo` - GPT-3.5 (дешевле)
 - `openai/gpt-4o` - GPT-4o
 - `openai/gpt-4o-mini` - GPT-4o mini (быстрее и дешевле)
+
+### X.AI (Grok)
+
+```env
+MODEL_GROK=x-ai/grok-4-fast
+```
+
+**Доступные варианты:**
+- `x-ai/grok-4-fast` - Grok 4 Fast (рекомендуется - быстро и эффективно)
+- `x-ai/grok-4` - Grok 4 (полная версия)
+- `x-ai/grok-3` - Grok 3 (предыдущая версия)
 
 ### DeepSeek
 
@@ -97,6 +107,7 @@ node check-models.js
 | GPT-4 Turbo | $10 / $30 |
 | GPT-3.5 Turbo | $0.50 / $1.50 |
 | GPT-4o mini | $0.15 / $0.60 |
+| Grok 4 Fast | $0.50 / $1.50 |
 | DeepSeek V3 | $0.27 / $1.10 |
 | DeepSeek (free) | Бесплатно |
 | Gemini 2.5 Flash | $0.50 / $1.50 |
@@ -137,7 +148,7 @@ node check-models.js
 ```env
 MODEL_CHATGPT=openai/gpt-5.1-chat
 MODEL_DEEPSEEK=deepseek/deepseek-chat
-MODEL_COPILOT=openai/gpt-4
+MODEL_GROK=x-ai/grok-4-fast
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
 MODEL_GEMINI=google/gemini-2.5-flash
 ```
@@ -147,7 +158,7 @@ MODEL_GEMINI=google/gemini-2.5-flash
 ```env
 MODEL_CHATGPT=openai/gpt-3.5-turbo
 MODEL_DEEPSEEK=deepseek/deepseek-chat-v3-0324:free
-MODEL_COPILOT=openai/gpt-3.5-turbo
+MODEL_GROK=x-ai/grok-4-fast
 MODEL_PERPLEXITY=perplexity/sonar
 MODEL_GEMINI=google/gemini-2.5-flash
 ```
@@ -157,7 +168,7 @@ MODEL_GEMINI=google/gemini-2.5-flash
 ```env
 MODEL_CHATGPT=openai/gpt-5.1-chat
 MODEL_DEEPSEEK=deepseek/deepseek-chat-v3.1
-MODEL_COPILOT=openai/gpt-4
+MODEL_GROK=x-ai/grok-4
 MODEL_PERPLEXITY=perplexity/sonar-pro-search
 MODEL_GEMINI=google/gemini-2.5-pro
 ```
