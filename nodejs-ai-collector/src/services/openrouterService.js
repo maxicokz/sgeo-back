@@ -35,7 +35,7 @@ class OpenRouterService {
             content: prompt,
           },
         ],
-        max_tokens: options.maxTokens || 1000,
+        max_tokens: options.maxTokens || 4096,
         temperature: options.temperature || 0.7,
         top_p: options.topP || 1,
         ...options,
