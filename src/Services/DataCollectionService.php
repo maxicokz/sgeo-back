@@ -158,7 +158,8 @@ class DataCollectionService
 
         foreach ($prompts as $promptIndex => $prompt) {
             // Query all LLM models with this prompt
-            $results = $this->openRouter->queryMultipleModels($llmModels, $prompt);
+            $options = ['max_tokens' => config('app.models.max_tokens')];
+            $results = $this->openRouter->queryMultipleModels($llmModels, $prompt, $options);
 
             foreach ($results as $modelKey => $result) {
                 try {
