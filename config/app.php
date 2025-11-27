@@ -17,6 +17,7 @@ return [
         'claude' => $_ENV['MODEL_CLAUDE'] ?? 'anthropic/claude-3-opus',
         'gemini' => $_ENV['MODEL_GEMINI'] ?? 'google/gemini-pro',
         'perplexity' => $_ENV['MODEL_PERPLEXITY'] ?? 'perplexity/pplx-70b-online',
+        'max_tokens' => (int)($_ENV['MODEL_MAX_TOKENS'] ?? 4096),
     ],
 
     'session' => [
