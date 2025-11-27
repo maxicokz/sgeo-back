@@ -306,10 +306,10 @@ router.delete('/responses', async (req, res) => {
  */
 router.get('/export/csv', async (req, res) => {
   try {
-    const { limit, modelName, language } = req.query;
+    const { modelName, language } = req.query;
 
     const options = {
-      limit: limit ? parseInt(limit) : 1000,
+      limit: 1000000, // Получаем все записи (практически без лимита)
     };
 
     if (modelName) {
@@ -335,10 +335,24 @@ router.get('/export/csv', async (req, res) => {
       return str;
     };
 
+    // Helper function to format sources for CSV
+    const formatSources = (sources) => {
+      if (!sources || !Array.isArray(sources) || sources.length === 0) {
+        return '';
+      }
+      // Format as: "Title: URL" separated by semicolons
+      return sources.map(s => {
+        const title = s.title || s.url;
+        return `${title}: ${s.url}`;
+      }).join('; ');
+    };
+
     // Generate CSV with proper formatting
-    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Tokens Used'];
+    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Sources', 'Tokens Used'];
     const rows = responses.map(r => {
       const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
+      const sourcesFormatted = formatSources(r.sources);
+
       return [
         escapeCsvField(r.id),
         escapeCsvField(r.created_at),
@@ -347,6 +361,7 @@ router.get('/export/csv', async (req, res) => {
         escapeCsvField(r.prompt || ''),
         escapeCsvField(r.response || ''),
         escapeCsvField(sourcesCount),
+        escapeCsvField(sourcesFormatted),
         escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
       ].join(',');
     });
