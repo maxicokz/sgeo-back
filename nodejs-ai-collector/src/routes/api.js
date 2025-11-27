@@ -542,4 +542,60 @@ router.delete('/prompt-sets/by-name/:name', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/export/sources-csv
+ * Export sources to CSV with one row per source
+ * Columns: Date, LLM, Prompt, Source URL
+ */
+router.get('/export/sources-csv', async (req, res) => {
+  try {
+    const options = {
+      limit: 1000000, // Get all records
+    };
+
+    const responses = await supabaseService.getResponses(options);
+
+    // Helper function to properly escape CSV fields
+    const escapeCsvField = (field) => {
+      if (field === null || field === undefined) {
+        return '';
+      }
+      const str = String(field);
+      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Generate CSV with one row per source
+    const headers = ['Date', 'LLM', 'Prompt', 'Source'];
+    const rows = [];
+
+    responses.forEach(r => {
+      if (r.sources && Array.isArray(r.sources) && r.sources.length > 0) {
+        r.sources.forEach(source => {
+          const url = source.url || source;
+          rows.push([
+            escapeCsvField(r.created_at),
+            escapeCsvField(r.model_name),
+            escapeCsvField(r.prompt || ''),
+            escapeCsvField(url),
+          ].join(','));
+        });
+      }
+    });
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="sources-${Date.now()}.csv"`);
+    res.send('\uFEFF' + csv);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 export default router;

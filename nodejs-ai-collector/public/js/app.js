@@ -23,6 +23,7 @@ const collectBtn = document.getElementById('collectBtn');
 const clearBtn = document.getElementById('clearBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
+const exportSourcesCsvBtn = document.getElementById('exportSourcesCsvBtn');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const clearResultsBtn = document.getElementById('clearResultsBtn');
 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -94,6 +95,9 @@ function setupEventListeners() {
 
     // Export CSV
     exportCsvBtn.addEventListener('click', exportToCSV);
+
+    // Export Sources CSV
+    exportSourcesCsvBtn.addEventListener('click', exportSourcesCSV);
 
     // Clear all results
     clearResultsBtn.addEventListener('click', clearAllResults);
@@ -540,6 +544,16 @@ async function exportToCSV() {
 
         window.location.href = url;
         showToast('Экспорт начат...', 'success');
+    } catch (error) {
+        showToast('Ошибка экспорта: ' + error.message, 'error');
+    }
+}
+
+// Export Sources to CSV
+async function exportSourcesCSV() {
+    try {
+        window.location.href = `${API_BASE}/export/sources-csv`;
+        showToast('Экспорт источников начат...', 'success');
     } catch (error) {
         showToast('Ошибка экспорта: ' + error.message, 'error');
     }
