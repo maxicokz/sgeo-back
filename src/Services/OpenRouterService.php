@@ -38,9 +38,13 @@ class OpenRouterService
         ];
 
         // Merge optional parameters
+        // OpenAI models require 'max_completion_tokens' instead of 'max_tokens'
+        $isOpenAIModel = str_starts_with($model, 'openai/');
+        $maxTokensKey = $isOpenAIModel ? 'max_completion_tokens' : 'max_tokens';
+
         $payload = array_merge($payload, array_filter([
             'temperature' => $options['temperature'] ?? 0.7,
-            'max_tokens' => $options['max_tokens'] ?? null,
+            $maxTokensKey => $options['max_tokens'] ?? null,
             'top_p' => $options['top_p'] ?? null,
             'frequency_penalty' => $options['frequency_penalty'] ?? null,
             'presence_penalty' => $options['presence_penalty'] ?? null,
