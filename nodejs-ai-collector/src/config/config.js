@@ -7,6 +7,10 @@ export const config = {
     apiKey: process.env.OPENROUTER_API_KEY,
     apiUrl: process.env.OPENROUTER_API_URL || 'https://openrouter.ai/api/v1',
   },
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL || 'gpt-4o',
+  },
   supabase: {
     url: process.env.SUPABASE_URL,
     anonKey: process.env.SUPABASE_ANON_KEY,
@@ -17,6 +21,7 @@ export const config = {
     grok: process.env.MODEL_GROK || 'x-ai/grok-4-fast',
     perplexity: process.env.MODEL_PERPLEXITY || 'perplexity/sonar-pro-search',
     gemini: process.env.MODEL_GEMINI || 'google/gemini-2.5-flash',
+    openai: 'openai-direct', // Special marker for direct OpenAI API
   },
   app: {
     name: process.env.APP_NAME || 'AI Responses Collector',

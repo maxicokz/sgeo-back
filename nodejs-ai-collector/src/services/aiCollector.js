@@ -1,4 +1,5 @@
 import openrouterService from './openrouterService.js';
+import openaiService from './openaiService.js';
 import supabaseService from './supabaseService.js';
 import { detectLanguage } from '../utils/languageDetector.js';
 import { extractSources } from '../utils/sourcesExtractor.js';
@@ -28,9 +29,16 @@ class AICollector {
     // Detect language (disabled - returns null)
     const language = detectLanguage(prompt);
 
-    // Query the model
+    // Query the model - use OpenAI direct or OpenRouter
     const startTime = Date.now();
-    const result = await openrouterService.query(modelId, prompt, options);
+    let result;
+    if (modelId === 'openai-direct') {
+      // Use direct OpenAI API
+      result = await openaiService.query(prompt, options);
+    } else {
+      // Use OpenRouter for all other models
+      result = await openrouterService.query(modelId, prompt, options);
+    }
     const endTime = Date.now();
 
     if (!result.success) {
