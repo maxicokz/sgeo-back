@@ -311,24 +311,49 @@ router.get('/export/csv', async (req, res) => {
   try {
     const { modelName, language } = req.query;
 
-    const options = {
-      limit: 10000, // Reasonable limit to avoid timeout
-    };
+    // Fetch data in smaller batches to avoid connection issues
+    const batchSize = 100;
+    let allResponses = [];
+    let offset = 0;
+    let hasMore = true;
 
-    if (modelName) {
-      options.modelName = modelName;
+    console.log('📥 Starting CSV export...');
+
+    while (hasMore) {
+      const options = {
+        limit: batchSize,
+        offset: offset,
+      };
+
+      if (modelName) {
+        options.modelName = modelName;
+      }
+
+      if (language) {
+        options.language = language;
+      }
+
+      const batch = await supabaseService.getResponses(options);
+
+      if (!batch || !Array.isArray(batch) || batch.length === 0) {
+        hasMore = false;
+      } else {
+        allResponses = allResponses.concat(batch);
+        offset += batchSize;
+        console.log(`📥 Fetched ${allResponses.length} responses so far...`);
+
+        // Stop if we got less than batch size (no more data)
+        if (batch.length < batchSize) {
+          hasMore = false;
+        }
+      }
     }
 
-    if (language) {
-      options.language = language;
-    }
-
-    console.log('📥 Exporting CSV with options:', options);
-    const responses = await supabaseService.getResponses(options);
-    console.log(`📥 Got ${responses?.length || 0} responses`);
+    console.log(`📥 Total responses: ${allResponses.length}`);
+    const responses = allResponses;
 
     // Ensure responses is an array
-    if (!responses || !Array.isArray(responses)) {
+    if (!responses || responses.length === 0) {
       throw new Error('No data to export');
     }
 
