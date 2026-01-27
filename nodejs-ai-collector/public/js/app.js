@@ -21,6 +21,7 @@ const batchPromptsInput = document.getElementById('batchPromptsInput');
 const modelSelection = document.getElementById('modelSelection');
 const selectAllModelsBtn = document.getElementById('selectAllModelsBtn');
 const webSearchCheckbox = document.getElementById('webSearchCheckbox');
+const systemPromptInput = document.getElementById('systemPromptInput');
 const collectBtn = document.getElementById('collectBtn');
 const clearBtn = document.getElementById('clearBtn');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -328,6 +329,7 @@ async function collectFromModels(prompts) {
                     prompt,
                     models: selectedModels,
                     webSearch: webSearchEnabled,
+                    systemPrompt: systemPromptInput.value.trim() || null,
                 }),
             });
 

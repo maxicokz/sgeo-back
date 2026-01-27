@@ -20,7 +20,7 @@ class OpenRouterService {
    * Send a prompt to a specific AI model
    * @param {string} model - Model identifier
    * @param {string} prompt - The prompt to send
-   * @param {Object} options - Additional options (webSearch: boolean)
+   * @param {Object} options - Additional options (webSearch: boolean, systemPrompt: string)
    * @returns {Promise<Object>} Response from the AI model
    */
   async query(model, prompt, options = {}) {
@@ -40,16 +40,25 @@ class OpenRouterService {
       const maxTokensKey = isOpenAIModel ? 'max_completion_tokens' : 'max_tokens';
 
       // Remove custom options before spreading to avoid sending them to API
-      const { webSearch, ...apiOptions } = options;
+      const { webSearch, systemPrompt, ...apiOptions } = options;
+
+      // Build messages array with optional system prompt
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt,
+        });
+        console.log(`📋 System prompt: "${systemPrompt.substring(0, 50)}..."`);
+      }
+      messages.push({
+        role: 'user',
+        content: prompt,
+      });
 
       const response = await this.client.post('/chat/completions', {
         model: modelWithSuffix,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        messages,
         [maxTokensKey]: apiOptions.maxTokens || 1000,
         temperature: apiOptions.temperature || 0.7,
         top_p: apiOptions.topP || 1,

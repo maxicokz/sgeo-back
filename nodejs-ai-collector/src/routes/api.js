@@ -30,11 +30,11 @@ router.get('/models', (req, res) => {
 /**
  * POST /api/collect
  * Collect responses from selected AI models
- * Body: { prompt: string, models: string[], webSearch?: boolean }
+ * Body: { prompt: string, models: string[], webSearch?: boolean, systemPrompt?: string }
  */
 router.post('/collect', async (req, res) => {
   try {
-    const { prompt, models, webSearch } = req.body;
+    const { prompt, models, webSearch, systemPrompt } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -53,8 +53,10 @@ router.post('/collect', async (req, res) => {
     // Detect language
     const language = detectLanguage(prompt);
 
-    // Collect responses with optional web search
-    const options = webSearch ? { webSearch: true } : {};
+    // Collect responses with optional web search and system prompt
+    const options = {};
+    if (webSearch) options.webSearch = true;
+    if (systemPrompt) options.systemPrompt = systemPrompt;
     const results = await aiCollector.collectMultiple(models, prompt, options);
 
     res.json({
