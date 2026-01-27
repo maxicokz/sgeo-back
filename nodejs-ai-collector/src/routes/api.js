@@ -352,6 +352,15 @@ router.get('/export/csv', async (req, res) => {
     console.log(`📥 Total responses: ${allResponses.length}`);
     const responses = allResponses;
 
+    // Debug: log sources structure for first few responses
+    responses.slice(0, 3).forEach((r, i) => {
+      let parsedSources = r.sources;
+      if (typeof parsedSources === 'string') {
+        try { parsedSources = JSON.parse(parsedSources); } catch (e) { parsedSources = []; }
+      }
+      console.log(`📥 Response ${i}: raw type=${typeof r.sources}, parsed isArray=${Array.isArray(parsedSources)}, count=${Array.isArray(parsedSources) ? parsedSources.length : 0}`);
+    });
+
     // Ensure responses is an array
     if (!responses || responses.length === 0) {
       throw new Error('No data to export');
@@ -375,7 +384,16 @@ router.get('/export/csv', async (req, res) => {
     const rows = [];
 
     responses.forEach(r => {
-      const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
+      // Parse sources if it's a JSON string
+      let sources = r.sources;
+      if (typeof sources === 'string') {
+        try {
+          sources = JSON.parse(sources);
+        } catch (e) {
+          sources = [];
+        }
+      }
+      const sourcesCount = sources && Array.isArray(sources) ? sources.length : 0;
       const baseRow = [
         escapeCsvField(r.id),
         escapeCsvField(r.created_at),
@@ -388,7 +406,7 @@ router.get('/export/csv', async (req, res) => {
 
       if (sourcesCount > 0) {
         // Create a separate row for each source
-        r.sources.forEach((source, index) => {
+        sources.forEach((source, index) => {
           rows.push([
             ...baseRow,
             escapeCsvField(index + 1),
