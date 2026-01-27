@@ -305,7 +305,7 @@ router.delete('/responses', async (req, res) => {
 
 /**
  * GET /api/export/csv
- * Export responses to CSV
+ * Export responses to CSV with each source on a separate row
  */
 router.get('/export/csv', async (req, res) => {
   try {
@@ -338,25 +338,13 @@ router.get('/export/csv', async (req, res) => {
       return str;
     };
 
-    // Helper function to format sources for CSV
-    const formatSources = (sources) => {
-      if (!sources || !Array.isArray(sources) || sources.length === 0) {
-        return '';
-      }
-      // Format as: "Title: URL" separated by semicolons
-      return sources.map(s => {
-        const title = s.title || s.url;
-        return `${title}: ${s.url}`;
-      }).join('; ');
-    };
+    // Generate CSV with each source on a separate row
+    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Source Number', 'Source Title', 'Source URL', 'Tokens Used'];
+    const rows = [];
 
-    // Generate CSV with proper formatting
-    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Sources', 'Tokens Used'];
-    const rows = responses.map(r => {
+    responses.forEach(r => {
       const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
-      const sourcesFormatted = formatSources(r.sources);
-
-      return [
+      const baseRow = [
         escapeCsvField(r.id),
         escapeCsvField(r.created_at),
         escapeCsvField(r.model_name),
@@ -364,9 +352,29 @@ router.get('/export/csv', async (req, res) => {
         escapeCsvField(r.prompt || ''),
         escapeCsvField(r.response || ''),
         escapeCsvField(sourcesCount),
-        escapeCsvField(sourcesFormatted),
-        escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
-      ].join(',');
+      ];
+
+      if (sourcesCount > 0) {
+        // Create a separate row for each source
+        r.sources.forEach((source, index) => {
+          rows.push([
+            ...baseRow,
+            escapeCsvField(index + 1),
+            escapeCsvField(source.title || ''),
+            escapeCsvField(source.url || ''),
+            escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
+          ].join(','));
+        });
+      } else {
+        // No sources - single row with empty source fields
+        rows.push([
+          ...baseRow,
+          '', // Source Number
+          '', // Source Title
+          '', // Source URL
+          escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
+        ].join(','));
+      }
     });
 
     // Use \r\n for line breaks (RFC 4180 standard)
