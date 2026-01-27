@@ -13,11 +13,12 @@ class AICollector {
    * Collect response from a single AI model
    * @param {string} modelName - Name of the model (chatgpt, gemini, etc.)
    * @param {string} prompt - The prompt to send
-   * @param {Object} options - Additional options
+   * @param {Object} options - Additional options (webSearch: boolean)
    * @returns {Promise<Object>} Collected response
    */
   async collectSingle(modelName, prompt, options = {}) {
-    console.log(`\n📤 Querying ${modelName}...`);
+    const webSearchStr = options.webSearch ? ' [Web Search]' : '';
+    console.log(`\n📤 Querying ${modelName}${webSearchStr}...`);
 
     // Get model ID from config
     const modelId = this.models[modelName.toLowerCase()];

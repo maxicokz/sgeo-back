@@ -6,6 +6,7 @@ let availableModels = [];
 let selectedModels = [];
 let isCollecting = false;
 let isBatchMode = false;
+let webSearchEnabled = false;
 let selectedResponses = new Set();
 let currentPage = 1;
 let totalPages = 1;
@@ -19,6 +20,8 @@ const promptInput = document.getElementById('promptInput');
 const batchPromptsInput = document.getElementById('batchPromptsInput');
 const modelSelection = document.getElementById('modelSelection');
 const selectAllModelsBtn = document.getElementById('selectAllModelsBtn');
+const webSearchCheckbox = document.getElementById('webSearchCheckbox');
+const systemPromptInput = document.getElementById('systemPromptInput');
 const collectBtn = document.getElementById('collectBtn');
 const clearBtn = document.getElementById('clearBtn');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -77,6 +80,11 @@ function setupEventListeners() {
 
     // Model selection
     selectAllModelsBtn.addEventListener('click', selectAllModels);
+
+    // Web search toggle
+    webSearchCheckbox.addEventListener('change', (e) => {
+        webSearchEnabled = e.target.checked;
+    });
 
     // Collect button
     collectBtn.addEventListener('click', handleCollect);
@@ -320,6 +328,8 @@ async function collectFromModels(prompts) {
                 body: JSON.stringify({
                     prompt,
                     models: selectedModels,
+                    webSearch: webSearchEnabled,
+                    systemPrompt: systemPromptInput.value.trim() || null,
                 }),
             });
 

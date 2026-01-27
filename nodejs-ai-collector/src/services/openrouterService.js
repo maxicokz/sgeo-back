@@ -20,29 +20,49 @@ class OpenRouterService {
    * Send a prompt to a specific AI model
    * @param {string} model - Model identifier
    * @param {string} prompt - The prompt to send
-   * @param {Object} options - Additional options
+   * @param {Object} options - Additional options (webSearch: boolean, systemPrompt: string)
    * @returns {Promise<Object>} Response from the AI model
    */
   async query(model, prompt, options = {}) {
     try {
       const startTime = Date.now();
 
+      // Apply :online suffix for web search capability
+      // See: https://openrouter.ai/docs/guides/features/plugins/web-search
+      let modelWithSuffix = model;
+      if (options.webSearch) {
+        modelWithSuffix = `${model}:online`;
+        console.log(`🌐 Web search enabled for ${model} -> ${modelWithSuffix}`);
+      }
+
       // OpenAI models require 'max_completion_tokens' instead of 'max_tokens'
       const isOpenAIModel = model.startsWith('openai/');
       const maxTokensKey = isOpenAIModel ? 'max_completion_tokens' : 'max_tokens';
 
+      // Remove custom options before spreading to avoid sending them to API
+      const { webSearch, systemPrompt, ...apiOptions } = options;
+
+      // Build messages array with optional system prompt
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt,
+        });
+        console.log(`📋 System prompt: "${systemPrompt.substring(0, 50)}..."`);
+      }
+      messages.push({
+        role: 'user',
+        content: prompt,
+      });
+
       const response = await this.client.post('/chat/completions', {
-        model: model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        [maxTokensKey]: options.maxTokens || 1000,
-        temperature: options.temperature || 0.7,
-        top_p: options.topP || 1,
-        ...options,
+        model: modelWithSuffix,
+        messages,
+        [maxTokensKey]: apiOptions.maxTokens || 1000,
+        temperature: apiOptions.temperature || 0.7,
+        top_p: apiOptions.topP || 1,
+        ...apiOptions,
       });
 
       const endTime = Date.now();
@@ -59,8 +79,11 @@ class OpenRouterService {
           finishReason: response.data.choices[0].finish_reason,
           // Perplexity citations (array of URLs)
           citations: response.data.citations,
-          // Perplexity annotations (detailed info with titles)
+          // Perplexity/OpenRouter annotations (detailed info with titles)
+          // Web search results are standardized to url_citation format
           annotations: response.data.choices[0].message.annotations,
+          // Flag indicating web search was enabled
+          webSearchEnabled: !!options.webSearch,
         },
       };
     } catch (error) {

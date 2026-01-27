@@ -109,6 +109,28 @@
                     </div>
                 </div>
 
+                <!-- Web Search Option -->
+                <div class="form-group">
+                    <div class="web-search-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="webSearchCheckbox">
+                            <span class="checkbox-text">🌐 Веб-поиск</span>
+                            <span class="checkbox-hint">(дополнительная стоимость)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- System Prompt -->
+                <div class="form-group">
+                    <label for="systemPromptInput">Системный промпт:</label>
+                    <textarea
+                        id="systemPromptInput"
+                        class="prompt-input system-prompt-input"
+                        placeholder="Инструкции для AI..."
+                        rows="3"
+                    >User is currently in Astana. Always provide sources and citations when available. Respond in the same language as the user's question.</textarea>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="action-buttons">
                     <button id="collectBtn" class="btn btn-primary">

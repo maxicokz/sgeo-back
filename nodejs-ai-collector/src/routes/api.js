@@ -30,11 +30,11 @@ router.get('/models', (req, res) => {
 /**
  * POST /api/collect
  * Collect responses from selected AI models
- * Body: { prompt: string, models: string[] }
+ * Body: { prompt: string, models: string[], webSearch?: boolean, systemPrompt?: string }
  */
 router.post('/collect', async (req, res) => {
   try {
-    const { prompt, models } = req.body;
+    const { prompt, models, webSearch, systemPrompt } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -53,8 +53,11 @@ router.post('/collect', async (req, res) => {
     // Detect language
     const language = detectLanguage(prompt);
 
-    // Collect responses
-    const results = await aiCollector.collectMultiple(models, prompt);
+    // Collect responses with optional web search and system prompt
+    const options = {};
+    if (webSearch) options.webSearch = true;
+    if (systemPrompt) options.systemPrompt = systemPrompt;
+    const results = await aiCollector.collectMultiple(models, prompt, options);
 
     res.json({
       success: true,
@@ -302,25 +305,57 @@ router.delete('/responses', async (req, res) => {
 
 /**
  * GET /api/export/csv
- * Export responses to CSV
+ * Export responses to CSV with each source on a separate row
  */
 router.get('/export/csv', async (req, res) => {
   try {
     const { modelName, language } = req.query;
 
-    const options = {
-      limit: 1000000, // Получаем все записи (практически без лимита)
-    };
+    // Fetch data in smaller batches to avoid connection issues
+    const batchSize = 100;
+    let allResponses = [];
+    let offset = 0;
+    let hasMore = true;
 
-    if (modelName) {
-      options.modelName = modelName;
+    console.log('📥 Starting CSV export...');
+
+    while (hasMore) {
+      const options = {
+        limit: batchSize,
+        offset: offset,
+      };
+
+      if (modelName) {
+        options.modelName = modelName;
+      }
+
+      if (language) {
+        options.language = language;
+      }
+
+      const batch = await supabaseService.getResponses(options);
+
+      if (!batch || !Array.isArray(batch) || batch.length === 0) {
+        hasMore = false;
+      } else {
+        allResponses = allResponses.concat(batch);
+        offset += batchSize;
+        console.log(`📥 Fetched ${allResponses.length} responses so far...`);
+
+        // Stop if we got less than batch size (no more data)
+        if (batch.length < batchSize) {
+          hasMore = false;
+        }
+      }
     }
 
-    if (language) {
-      options.language = language;
-    }
+    console.log(`📥 Total responses: ${allResponses.length}`);
+    const responses = allResponses;
 
-    const responses = await supabaseService.getResponses(options);
+    // Ensure responses is an array
+    if (!responses || responses.length === 0) {
+      throw new Error('No data to export');
+    }
 
     // Helper function to properly escape CSV fields
     const escapeCsvField = (field) => {
@@ -335,25 +370,13 @@ router.get('/export/csv', async (req, res) => {
       return str;
     };
 
-    // Helper function to format sources for CSV
-    const formatSources = (sources) => {
-      if (!sources || !Array.isArray(sources) || sources.length === 0) {
-        return '';
-      }
-      // Format as: "Title: URL" separated by semicolons
-      return sources.map(s => {
-        const title = s.title || s.url;
-        return `${title}: ${s.url}`;
-      }).join('; ');
-    };
+    // Generate CSV with each source on a separate row
+    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Source Number', 'Source Title', 'Source URL', 'Tokens Used'];
+    const rows = [];
 
-    // Generate CSV with proper formatting
-    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Sources', 'Tokens Used'];
-    const rows = responses.map(r => {
+    responses.forEach(r => {
       const sourcesCount = r.sources && Array.isArray(r.sources) ? r.sources.length : 0;
-      const sourcesFormatted = formatSources(r.sources);
-
-      return [
+      const baseRow = [
         escapeCsvField(r.id),
         escapeCsvField(r.created_at),
         escapeCsvField(r.model_name),
@@ -361,9 +384,29 @@ router.get('/export/csv', async (req, res) => {
         escapeCsvField(r.prompt || ''),
         escapeCsvField(r.response || ''),
         escapeCsvField(sourcesCount),
-        escapeCsvField(sourcesFormatted),
-        escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
-      ].join(',');
+      ];
+
+      if (sourcesCount > 0) {
+        // Create a separate row for each source
+        r.sources.forEach((source, index) => {
+          rows.push([
+            ...baseRow,
+            escapeCsvField(index + 1),
+            escapeCsvField(source.title || ''),
+            escapeCsvField(source.url || ''),
+            escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
+          ].join(','));
+        });
+      } else {
+        // No sources - single row with empty source fields
+        rows.push([
+          ...baseRow,
+          '', // Source Number
+          '', // Source Title
+          '', // Source URL
+          escapeCsvField(r.metadata?.usage?.total_tokens || 'N/A'),
+        ].join(','));
+      }
     });
 
     // Use \r\n for line breaks (RFC 4180 standard)
