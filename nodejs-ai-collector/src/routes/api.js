@@ -312,7 +312,7 @@ router.get('/export/csv', async (req, res) => {
     const { modelName, language } = req.query;
 
     const options = {
-      limit: 1000000, // Получаем все записи (практически без лимита)
+      limit: 10000, // Reasonable limit to avoid timeout
     };
 
     if (modelName) {
@@ -323,7 +323,14 @@ router.get('/export/csv', async (req, res) => {
       options.language = language;
     }
 
+    console.log('📥 Exporting CSV with options:', options);
     const responses = await supabaseService.getResponses(options);
+    console.log(`📥 Got ${responses?.length || 0} responses`);
+
+    // Ensure responses is an array
+    if (!responses || !Array.isArray(responses)) {
+      throw new Error('No data to export');
+    }
 
     // Helper function to properly escape CSV fields
     const escapeCsvField = (field) => {
