@@ -1,6 +1,7 @@
 -- Create table for storing AI responses
 CREATE TABLE IF NOT EXISTS ai_responses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    topic VARCHAR(255),
     prompt TEXT NOT NULL,
     model_name VARCHAR(100) NOT NULL,
     response TEXT NOT NULL,
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS ai_responses (
 CREATE INDEX IF NOT EXISTS idx_ai_responses_created_at ON ai_responses(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_responses_model_name ON ai_responses(model_name);
 CREATE INDEX IF NOT EXISTS idx_ai_responses_language ON ai_responses(language);
+CREATE INDEX IF NOT EXISTS idx_ai_responses_topic ON ai_responses(topic);
 
 -- Create index for metadata search
 CREATE INDEX IF NOT EXISTS idx_ai_responses_metadata ON ai_responses USING GIN (metadata);
@@ -24,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_responses_sources ON ai_responses USING GIN (s
 
 -- Add comment to table
 COMMENT ON TABLE ai_responses IS 'Stores AI model responses from various providers via OpenRouter';
+COMMENT ON COLUMN ai_responses.topic IS 'Topic/theme associated with the prompt (not sent to AI, for organization only)';
 COMMENT ON COLUMN ai_responses.prompt IS 'The input prompt sent to the AI model';
 COMMENT ON COLUMN ai_responses.model_name IS 'Name of the AI model used (e.g., chatgpt, gemini, perplexity)';
 COMMENT ON COLUMN ai_responses.response IS 'The AI model response text';

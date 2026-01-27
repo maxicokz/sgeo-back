@@ -30,11 +30,11 @@ router.get('/models', (req, res) => {
 /**
  * POST /api/collect
  * Collect responses from selected AI models
- * Body: { prompt: string, models: string[], webSearch?: boolean, systemPrompt?: string }
+ * Body: { prompt: string, models: string[], webSearch?: boolean, systemPrompt?: string, topic?: string }
  */
 router.post('/collect', async (req, res) => {
   try {
-    const { prompt, models, webSearch, systemPrompt } = req.body;
+    const { prompt, models, webSearch, systemPrompt, topic } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -53,10 +53,12 @@ router.post('/collect', async (req, res) => {
     // Detect language
     const language = detectLanguage(prompt);
 
-    // Collect responses with optional web search and system prompt
+    // Collect responses with optional web search, system prompt, and topic
+    // Note: topic is NOT sent to AI, it's only for organization and CSV export
     const options = {};
     if (webSearch) options.webSearch = true;
     if (systemPrompt) options.systemPrompt = systemPrompt;
+    if (topic) options.topic = topic;
     const results = await aiCollector.collectMultiple(models, prompt, options);
 
     res.json({
@@ -69,6 +71,7 @@ router.post('/collect', async (req, res) => {
       },
       responses: results.successful.map(r => ({
         id: r.id,
+        topic: r.topic,
         model: r.modelName,
         response: r.response,
         language: r.language,
@@ -88,11 +91,11 @@ router.post('/collect', async (req, res) => {
 /**
  * GET /api/responses
  * Get collected responses with pagination
- * Query params: limit, page, offset, modelName, language
+ * Query params: limit, page, offset, modelName, language, topic
  */
 router.get('/responses', async (req, res) => {
   try {
-    const { limit, page, offset, modelName, language } = req.query;
+    const { limit, page, offset, modelName, language, topic } = req.query;
 
     const perPage = limit ? parseInt(limit) : 20;
     const currentPage = page ? parseInt(page) : 1;
@@ -112,6 +115,10 @@ router.get('/responses', async (req, res) => {
       options.language = language;
     }
 
+    if (topic) {
+      options.topic = topic;
+    }
+
     const result = await supabaseService.getResponses(options);
     const responses = result.data;
     const total = result.count;
@@ -120,6 +127,7 @@ router.get('/responses', async (req, res) => {
       success: true,
       responses: responses.map(r => ({
         id: r.id,
+        topic: r.topic,
         prompt: r.prompt,
         model: r.model_name,
         response: r.response,
@@ -166,6 +174,7 @@ router.get('/responses/:id', async (req, res) => {
       success: true,
       response: {
         id: response.id,
+        topic: response.topic,
         prompt: response.prompt,
         model: response.model_name,
         response: response.response,
@@ -306,10 +315,11 @@ router.delete('/responses', async (req, res) => {
 /**
  * GET /api/export/csv
  * Export responses to CSV with each source on a separate row
+ * Query params: modelName, language, topic
  */
 router.get('/export/csv', async (req, res) => {
   try {
-    const { modelName, language } = req.query;
+    const { modelName, language, topic } = req.query;
 
     // Fetch data in smaller batches to avoid connection issues
     const batchSize = 100;
@@ -331,6 +341,10 @@ router.get('/export/csv', async (req, res) => {
 
       if (language) {
         options.language = language;
+      }
+
+      if (topic) {
+        options.topic = topic;
       }
 
       const batch = await supabaseService.getResponses(options);
@@ -371,7 +385,7 @@ router.get('/export/csv', async (req, res) => {
     };
 
     // Generate CSV with each source on a separate row
-    const headers = ['ID', 'Date', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Source Number', 'Source Title', 'Source URL', 'Tokens Used'];
+    const headers = ['ID', 'Date', 'Topic', 'Model', 'Language', 'Prompt', 'Response', 'Sources Count', 'Source Number', 'Source Title', 'Source URL', 'Tokens Used'];
     const rows = [];
 
     responses.forEach(r => {
@@ -379,6 +393,7 @@ router.get('/export/csv', async (req, res) => {
       const baseRow = [
         escapeCsvField(r.id),
         escapeCsvField(r.created_at),
+        escapeCsvField(r.topic || ''),
         escapeCsvField(r.model_name),
         escapeCsvField(r.language || 'N/A'),
         escapeCsvField(r.prompt || ''),

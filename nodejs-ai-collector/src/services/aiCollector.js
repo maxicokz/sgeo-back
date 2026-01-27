@@ -13,7 +13,10 @@ class AICollector {
    * Collect response from a single AI model
    * @param {string} modelName - Name of the model (chatgpt, gemini, etc.)
    * @param {string} prompt - The prompt to send
-   * @param {Object} options - Additional options (webSearch: boolean)
+   * @param {Object} options - Additional options
+   * @param {boolean} options.webSearch - Enable web search
+   * @param {string} options.systemPrompt - System prompt for context
+   * @param {string} options.topic - Topic/theme for organization (not sent to AI)
    * @returns {Promise<Object>} Collected response
    */
   async collectSingle(modelName, prompt, options = {}) {
@@ -53,6 +56,7 @@ class AICollector {
 
     // Prepare data for storage
     const responseData = {
+      topic: options.topic || null,
       prompt,
       modelName: modelName.toLowerCase(),
       response: result.content,
@@ -84,6 +88,9 @@ class AICollector {
    * @param {Array<string>} modelNames - Array of model names
    * @param {string} prompt - The prompt to send
    * @param {Object} options - Additional options
+   * @param {boolean} options.webSearch - Enable web search
+   * @param {string} options.systemPrompt - System prompt for context
+   * @param {string} options.topic - Topic/theme for organization (not sent to AI)
    * @returns {Promise<Array>} Array of collected responses
    */
   async collectMultiple(modelNames, prompt, options = {}) {

@@ -9,6 +9,7 @@ class SupabaseService {
   /**
    * Save AI response to database
    * @param {Object} data - Response data
+   * @param {string} data.topic - Topic/theme for organization (not sent to AI)
    * @param {string} data.prompt - The input prompt
    * @param {string} data.modelName - Name of the AI model
    * @param {string} data.response - The AI response
@@ -23,6 +24,7 @@ class SupabaseService {
       console.log('🔍 [supabaseService] data.sources:', data.sources);
 
       const recordToInsert = {
+        topic: data.topic || null,
         prompt: data.prompt,
         model_name: data.modelName,
         response: data.response,
@@ -58,6 +60,7 @@ class SupabaseService {
    * @param {number} options.offset - Offset for pagination
    * @param {string} options.modelName - Filter by model name
    * @param {string} options.language - Filter by language
+   * @param {string} options.topic - Filter by topic
    * @param {boolean} options.count - Whether to return total count
    * @returns {Promise<Object|Array>} Array of responses or object with data and count
    */
@@ -77,6 +80,10 @@ class SupabaseService {
 
       if (options.language) {
         query = query.eq('language', options.language);
+      }
+
+      if (options.topic) {
+        query = query.eq('topic', options.topic);
       }
 
       // Use range for pagination
@@ -128,7 +135,7 @@ class SupabaseService {
     try {
       const { data, error } = await this.client
         .from('ai_responses')
-        .select('model_name, language, created_at');
+        .select('model_name, language, topic, created_at');
 
       if (error) throw error;
 
@@ -136,6 +143,7 @@ class SupabaseService {
         total: data.length,
         byModel: {},
         byLanguage: {},
+        byTopic: {},
       };
 
       data.forEach((record) => {
@@ -145,6 +153,11 @@ class SupabaseService {
         // Count by language
         if (record.language) {
           stats.byLanguage[record.language] = (stats.byLanguage[record.language] || 0) + 1;
+        }
+
+        // Count by topic
+        if (record.topic) {
+          stats.byTopic[record.topic] = (stats.byTopic[record.topic] || 0) + 1;
         }
       });
 
