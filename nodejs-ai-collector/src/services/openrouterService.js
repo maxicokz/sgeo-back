@@ -27,6 +27,10 @@ class OpenRouterService {
     try {
       const startTime = Date.now();
 
+      // OpenAI models require 'max_completion_tokens' instead of 'max_tokens'
+      const isOpenAIModel = model.startsWith('openai/');
+      const maxTokensKey = isOpenAIModel ? 'max_completion_tokens' : 'max_tokens';
+
       const response = await this.client.post('/chat/completions', {
         model: model,
         messages: [
@@ -35,7 +39,7 @@ class OpenRouterService {
             content: prompt,
           },
         ],
-        max_tokens: options.maxTokens || 1000,
+        [maxTokensKey]: options.maxTokens || 1000,
         temperature: options.temperature || 0.7,
         top_p: options.topP || 1,
         ...options,
