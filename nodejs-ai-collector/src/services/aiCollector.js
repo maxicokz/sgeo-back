@@ -45,14 +45,7 @@ class AICollector {
     console.log(`✅ Response received from ${modelName} (${endTime - startTime}ms)`);
 
     // Extract sources from response and metadata
-    console.log('🔍 [aiCollector] Calling extractSources...');
     const sources = extractSources(result.metadata, result.content);
-    console.log('🔍 [aiCollector] Extracted sources:', sources);
-    if (sources.length > 0) {
-      console.log(`🔗 Found ${sources.length} source(s)`);
-    } else {
-      console.log('⚠️ No sources found');
-    }
 
     // Prepare data for storage
     const responseData = {
@@ -71,10 +64,7 @@ class AICollector {
     };
 
     // Save to Supabase
-    console.log(`💾 Saving to database...`);
-    console.log('🔍 [aiCollector] responseData.sources:', responseData.sources);
     const saved = await supabaseService.saveResponse(responseData);
-    console.log(`✅ Saved with ID: ${saved.id}`);
 
     return {
       ...responseData,

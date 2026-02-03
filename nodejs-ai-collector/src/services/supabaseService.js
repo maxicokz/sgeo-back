@@ -20,9 +20,6 @@ class SupabaseService {
    */
   async saveResponse(data) {
     try {
-      console.log('🔍 [supabaseService] Saving response...');
-      console.log('🔍 [supabaseService] data.sources:', data.sources);
-
       const recordToInsert = {
         topic: data.topic || null,
         prompt: data.prompt,
@@ -33,8 +30,6 @@ class SupabaseService {
         metadata: data.metadata || {},
       };
 
-      console.log('🔍 [supabaseService] recordToInsert.sources:', recordToInsert.sources);
-
       const { data: result, error } = await this.client
         .from('ai_responses')
         .insert([recordToInsert])
@@ -42,9 +37,6 @@ class SupabaseService {
         .single();
 
       if (error) throw error;
-
-      console.log('🔍 [supabaseService] Saved record:', result);
-      console.log('🔍 [supabaseService] Saved sources:', result.sources);
 
       return result;
     } catch (error) {
