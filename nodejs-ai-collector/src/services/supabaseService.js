@@ -132,14 +132,32 @@ class SupabaseService {
         .select('*', { count: 'exact', head: true });
 
       if (countError) throw countError;
+      console.log('📊 Statistics totalCount:', totalCount);
 
-      // Get breakdown by model and language
-      const { data, error } = await this.client
-        .from('ai_responses')
-        .select('model_name, language')
-        .limit(100000);
+      // Get all model_name values using pagination to bypass 1000 row limit
+      let allData = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data: batch, error: batchError } = await this.client
+          .from('ai_responses')
+          .select('model_name, language')
+          .range(offset, offset + pageSize - 1);
+
+        if (batchError) throw batchError;
+
+        if (!batch || batch.length === 0) {
+          hasMore = false;
+        } else {
+          allData = allData.concat(batch);
+          offset += pageSize;
+          if (batch.length < pageSize) hasMore = false;
+        }
+      }
+
+      const data = allData;
 
       const stats = {
         total: totalCount,
