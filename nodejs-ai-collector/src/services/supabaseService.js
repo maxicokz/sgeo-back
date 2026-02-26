@@ -126,14 +126,23 @@ class SupabaseService {
    */
   async getStatistics() {
     try {
+      // Get exact total count without fetching all rows
+      const { count: totalCount, error: countError } = await this.client
+        .from('ai_responses')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+
+      // Get breakdown by model and language
       const { data, error } = await this.client
         .from('ai_responses')
-        .select('model_name, language, created_at');
+        .select('model_name, language')
+        .limit(100000);
 
       if (error) throw error;
 
       const stats = {
-        total: data.length,
+        total: totalCount,
         byModel: {},
         byLanguage: {},
       };
