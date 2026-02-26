@@ -129,7 +129,8 @@ class SupabaseService {
       // Get exact total count without fetching all rows
       const { count: totalCount, error: countError } = await this.client
         .from('ai_responses')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact' })
+        .limit(1);
 
       if (countError) throw countError;
       console.log('📊 Statistics totalCount:', totalCount);
